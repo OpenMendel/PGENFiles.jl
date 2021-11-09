@@ -1,17 +1,12 @@
-struct Pgen
-    io::IOStream
-    header::Header
-end
-
-struct ScatteredBitsVector <: AbstractVector
-    data_sectors::Vector{Vector{UInt8}}
+struct ScatteredBitsVector{V} <: AbstractVector{UInt8}
+    data_sectors::Vector{Base.RefValue{V}}
     bits_per_element::Int
     size::Int
     n_blocks::Int
 end
 
-struct ScatteredVector{T} <: AbstractVector{T}
-    data_sectors::Vector{Vector{T}}
+struct ScatteredVector{T, V} <: AbstractVector{T}
+    data_sectors::Vector{Base.RefValue{V}}
     size::Int
     n_blocks::Int
 end
@@ -23,14 +18,14 @@ end
 @inline function Base.getindex(x::ScatteredVector, i::Int)
     block_index = (i - 1) ÷ (2 ^ 16) + 1
     in_block_index = (i - 1) % (2 ^ 16) + 1
-    x.data_sectors[block_index][in_block_index]
+    x.data_sectors[block_index][][in_block_index]
 end
 
 @inline function Base.getindex(x::ScatteredBitsVector, i::Int)
     block_index = (i - 1) ÷ (2 ^ 16) + 1
     in_block_index = ((i - 1) % (2 ^ 16)) ÷ (8 ÷ x.bits_per_element) + 1
     in_byte_index = (i - 1) % (8 ÷ x.bits_per_element) # 0-based
-    byte = x.data_sectors[block_index][in_block_index]
+    byte = x.data_sectors[block_index][][in_block_index]
     (byte >> (x.bits_per_element * in_byte_index)) & mask_map[x.bits_per_element]
 end
 
@@ -46,8 +41,13 @@ struct Header
     n_blocks::UInt # number of blocks of 2^16 variants. Int(ceil(n_variants / 2 ^ 16)). 
     variant_block_offsets::Vector{UInt64} # record starting points of #0, #65536, ... length of (8 * n_blocks) bytes.
     # The following appear in blocks of 2^16 variants.
-    variant_types::Union{ScatteredBitsArray, ScatteredArray}
-    variant_lengths::ScatteredArray
-    allele_counts::Union{ScatteredArray, Nothing}
-    provisional_reference_flags::Union{ScatteredArray, Nothing}
+    variant_types::Union{ScatteredBitsVector, ScatteredVector}
+    variant_lengths::ScatteredVector
+    allele_counts::Union{ScatteredVector, Nothing}
+    provisional_reference_flags::Union{ScatteredVector, Nothing}
+end
+
+struct Pgen
+    io::IOStream
+    header::Header
 end
