@@ -1,5 +1,4 @@
 function Header(data::Vector{UInt8})
-    #seek(io, 0)
     # check magic number
     (data[1] == 0x6c && data[2] == 0x1b) || throw(ArgumentError("wrong magic number in the input file"))
     storage_mode = data[3]
