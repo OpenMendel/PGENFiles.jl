@@ -1,12 +1,12 @@
-function Header(io::IOStream)
-    seek(io, 0)
+function Header(data::Vector{UInt8})
+    #seek(io, 0)
     # check magic number
-    read(io, UInt16) == 0x1b6c || throw(ArgumentError("wrong magic number in the input file"))
-    storage_mode = read(io, UInt8)
+    (data[1] == 0x6c && data[2] == 0x1b) || throw(ArgumentError("wrong magic number in the input file"))
+    storage_mode = data[3]
     storage_mode == 0x10 || throw(ArgumentError("Only the standard format supported for now"))
-    n_variants = Int(read(io, UInt32))
-    n_samples = Int(read(io, UInt32))
-    format_num = read(io, UInt8)
+    n_variants = reinterpret(UInt32, view(data, 4:7))[1]
+    n_samples = reinterpret(UInt32, view(data, 8:11))[1]
+    format_num = data[12]
 
     # figure out bits_per_variant_type and bytes_per_record_length
     format_num_0_3 = format_num & 0x0f
@@ -18,12 +18,12 @@ function Header(io::IOStream)
     # provisional reference
     provisional_reference = (format_num & 0xc0) >> 6
 
-    n_blocks = Int(ceil(n_variants / 2 ^ 16))
+    n_blocks = ceil_int(n_variants, 2 ^ 16) #Int(ceil(n_variants / 2 ^ 16))
 
-    variant_block_offsets = read(io, n_blocks * sizeof(UInt64))
-    variant_block_offsets = reinterpret(UInt64, variant_block_offsets)
+    variant_block_offsets = reinterpret(UInt64, view(data, 13:(12 + n_blocks * 8)))
 
-    remaining_header = mmap(io, Vector{UInt8}, variant_block_offsets[1] - position(io))
+    #remaining_header = mmap(io, Vector{UInt8}, variant_block_offsets[1] - position(io))
+    offset = convert(UInt64, 12 + n_blocks * 8)
 
     t_variant_types = nothing
     sectors_variant_types = []
@@ -45,16 +45,17 @@ function Header(io::IOStream)
     else
         sectors_provisional_reference = nothing
     end
-    offset = 0
     for i in 1:n_blocks
-        block_size = i < n_blocks ? 2 ^ 16 : begin
-            rem = n_variants % 2 ^ 16
-            rem > 0 ? rem : 2 ^ 16
+        block_size = i < n_blocks ? convert(UInt, 2 ^ 16) : begin
+            rem = n_variants % convert(UInt, 2 ^ 16)
+            rem > 0 ? rem : convert(UInt, 2 ^ 16)
         end
 
         # read variant type track
-        size_variant_types = convert(Int, ceil(block_size / (8 ÷ bits_per_variant_type)))
-        arr = view(remaining_header, 
+        data_per_byte = 8 ÷ bits_per_variant_type
+        size_variant_types = ceil_int(block_size, data_per_byte)
+        #convert(UInt, ceil(block_size / (8 ÷ bits_per_variant_type)))
+        arr = view(data, 
             offset + 1 : offset + size_variant_types)
         push!(sectors_variant_types, Ref(arr))
         t_variant_types = typeof(arr)
@@ -62,7 +63,7 @@ function Header(io::IOStream)
 
         # read variant record length track
         arr = view(
-            remaining_header, offset + 1 : 
+            data, offset + 1 : 
             offset + block_size * bytes_per_record_length)
         reinterpreted = reinterpret(dtype_variant_length, arr)
         t_variant_sizes = typeof(reinterpreted)
@@ -72,7 +73,7 @@ function Header(io::IOStream)
         # read allele counts track
         if sectors_allele_counts !== nothing
             arr = view(
-                remaining_header, offset + 1:
+                data, offset + 1:
                 offset + block_size * bytes_allele_counts)
             reinterpreted = reinterpret(dtype_allele_counts, arr)
             t_allele_counts = typeof(reinterpreted)
@@ -82,9 +83,9 @@ function Header(io::IOStream)
 
         # read provisional reference flags track
         if sectors_provisional_reference !== nothing
-            size_pr = convert(Int, ceil(block_size / 8))
+            size_pr = ceil_int(block_size, 8)#convert(UInt, ceil(block_size / 8))
             arr = view(
-                remaining_header, offset + 1 :
+                data, offset + 1 :
                 offset + size_pr)
             t_provisional_reference_flags = typeof(arr)
             push!(sectors_provisional_reference, Ref(arr))
@@ -125,5 +126,6 @@ end
 
 function Header(filename::String)
     io = open(filename)
-    Header(io)
+    data = mmap(io)
+    Header(data)
 end

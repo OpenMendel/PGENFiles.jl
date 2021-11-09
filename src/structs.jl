@@ -49,5 +49,6 @@ end
 
 struct Pgen
     io::IOStream
+    data::Vector{UInt8}
     header::Header
 end
