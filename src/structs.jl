@@ -20,4 +20,6 @@ struct Pgen
     io::IOStream
     data::Vector{UInt8}
     header::Header
+    genotypes_cache::BitsVector{Vector{UInt8}} # 2-bit packed array of length header.n_samples
+    difflist_cache::Vector{UInt8} # length-64 vector
 end

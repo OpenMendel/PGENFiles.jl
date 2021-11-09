@@ -45,3 +45,12 @@ end
     byte = x.data_sectors[block_index][][in_block_index]
     (byte >> (x.bits_per_element * in_byte_index)) & mask_map[x.bits_per_element]
 end
+
+mutable struct DiffList{V,W,X,Y}
+    len::UInt32
+    sample_id_bases::Base.RefValue{V}
+    last_component_sizes::Base.RefValue{W}
+    has_genotypes::Bool
+    genotypes::Union{BitsVector{X}, Nothing}
+    sample_id_increments::Base.RefValue{Y}
+end
