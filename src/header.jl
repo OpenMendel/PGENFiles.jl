@@ -19,7 +19,7 @@ function Header(data::Vector{UInt8})
 
     n_blocks = ceil_int(n_variants, 2 ^ 16) #Int(ceil(n_variants / 2 ^ 16))
 
-    variant_block_offsets = reinterpret(UInt64, view(data, 13:(12 + n_blocks * 8)))
+    variant_block_offsets = reinterpret(UInt64, data[13:(12 + n_blocks * 8)])
 
     #remaining_header = mmap(io, Vector{UInt8}, variant_block_offsets[1] - position(io))
     offset = convert(UInt64, 12 + n_blocks * 8)
@@ -54,16 +54,13 @@ function Header(data::Vector{UInt8})
         data_per_byte = 8 ÷ bits_per_variant_type
         size_variant_types = ceil_int(block_size, data_per_byte)
         #convert(UInt, ceil(block_size / (8 ÷ bits_per_variant_type)))
-        arr = view(data, 
-            offset + 1 : offset + size_variant_types)
+        arr = data[offset + 1 : offset + size_variant_types]
         push!(sectors_variant_types, Ref(arr))
         t_variant_types = typeof(arr)
         offset += size_variant_types
 
         # read variant record length track
-        arr = view(
-            data, offset + 1 : 
-            offset + block_size * bytes_per_record_length)
+        arr = data[offset + 1 : offset + block_size * bytes_per_record_length]
         reinterpreted = reinterpret(dtype_variant_length, arr)
         t_variant_sizes = typeof(reinterpreted)
         push!(sectors_variant_lengths, Ref(reinterpreted))
@@ -71,9 +68,7 @@ function Header(data::Vector{UInt8})
 
         # read allele counts track
         if sectors_allele_counts !== nothing
-            arr = view(
-                data, offset + 1:
-                offset + block_size * bytes_allele_counts)
+            arr = data[offset + 1:offset + block_size * bytes_allele_counts]
             reinterpreted = reinterpret(dtype_allele_counts, arr)
             t_allele_counts = typeof(reinterpreted)
             push!(sectors_allele_counts, Ref(reinterpreted))
@@ -83,9 +78,7 @@ function Header(data::Vector{UInt8})
         # read provisional reference flags track
         if sectors_provisional_reference !== nothing
             size_pr = ceil_int(block_size, 8)#convert(UInt, ceil(block_size / 8))
-            arr = view(
-                data, offset + 1 :
-                offset + size_pr)
+            arr = data[offset + 1 : offset + size_pr]
             t_provisional_reference_flags = typeof(arr)
             push!(sectors_provisional_reference, Ref(arr))
             offset += size_pr
