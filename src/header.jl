@@ -5,6 +5,17 @@ function Header(data::Vector{UInt8})
     storage_mode == 0x10 || throw(ArgumentError("Only the standard format supported for now"))
     n_variants = reinterpret(UInt32, view(data, 4:7))[1]
     n_samples = reinterpret(UInt32, view(data, 8:11))[1]
+
+    if n_samples <= 2 ^ 8
+        bytes_per_sample_id = 1
+    elseif n_samples <= 2 ^ 16
+        bytes_per_sample_id = 2
+    elseif n_samples <= 2 ^ 24
+        bytes_per_sample_id = 3
+    else
+        bytes_per_sample_id = 4
+    end
+    
     format_num = data[12]
 
     # figure out bits_per_variant_type and bytes_per_record_length
@@ -111,7 +122,7 @@ function Header(data::Vector{UInt8})
     end
     Header(storage_mode, n_variants, n_samples, 
         bits_per_variant_type, bytes_per_record_length, 
-        bytes_allele_counts, provisional_reference, 
+        bytes_allele_counts, bytes_per_sample_id, provisional_reference, 
         n_blocks, variant_block_offsets, 
         variant_types, variant_lengths, allele_counts, provisional_reference_flags)
 end
