@@ -5,6 +5,7 @@ struct BitsVector{V} <: AbstractVector{UInt8}
     bits_per_element::UInt8
     size::UInt
 end
+
 function BitsVector(data::AbstractVector{UInt8}, bits_per_element, size)
     V = typeof(data)
     BitsVector{V}(Ref(data), bits_per_element, size)

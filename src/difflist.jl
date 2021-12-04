@@ -7,7 +7,7 @@ function parse_difflist(data::AbstractVector{UInt8},
     len, offset = decode_single(data; offset=offset)
 
     # sample id bases
-    n_groups = ceil_int(len, 0x000064)
+    n_groups = ceil_int(len, 0x000040) # 64 in decimal
     sample_id_dtype = bytes_to_UInt[bytes_per_sample_id]
     sample_id_bases = reinterpret(sample_id_dtype, view(data, 
         (offset + 1): (offset + n_groups * bytes_per_sample_id)))

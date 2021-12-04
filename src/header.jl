@@ -1,10 +1,11 @@
-function Header(data::Vector{UInt8})
+function Header(io::IOStream)
     # check magic number
-    (data[1] == 0x6c && data[2] == 0x1b) || throw(ArgumentError("wrong magic number in the input file"))
-    storage_mode = data[3]
+    (read(io, UInt8) == 0x6c && read(io, UInt8) == 0x1b) || throw(ArgumentError("wrong magic number in the input file"))
+    # 2 bytes so far
+    storage_mode = read(io, UInt8) # 3 bytes
     storage_mode == 0x10 || throw(ArgumentError("Only the standard format supported for now"))
-    n_variants = reinterpret(UInt32, view(data, 4:7))[1]
-    n_samples = reinterpret(UInt32, view(data, 8:11))[1]
+    n_variants = read(io, UInt32) # 7 bytes
+    n_samples = read(io, UInt32) # 11 bytes
 
     if n_samples <= 2 ^ 8
         bytes_per_sample_id = 1
@@ -16,7 +17,7 @@ function Header(data::Vector{UInt8})
         bytes_per_sample_id = 4
     end
     
-    format_num = data[12]
+    format_num = read(io, UInt8) # 12 bytes
 
     # figure out bits_per_variant_type and bytes_per_record_length
     format_num_0_3 = format_num & 0x0f
@@ -29,11 +30,11 @@ function Header(data::Vector{UInt8})
     provisional_reference = (format_num & 0xc0) >> 6
 
     n_blocks = ceil_int(n_variants, 2 ^ 16) #Int(ceil(n_variants / 2 ^ 16))
+    variant_block_offsets = Vector{UInt64}(undef, n_blocks)
+    read!(io, variant_block_offsets) # 12 + 8n_blocks
+    #variant_block_offsets = reinterpret(UInt64, data[13:(12 + n_blocks * 8)])
 
-    variant_block_offsets = reinterpret(UInt64, data[13:(12 + n_blocks * 8)])
-
-    #remaining_header = mmap(io, Vector{UInt8}, variant_block_offsets[1] - position(io))
-    offset = convert(UInt64, 12 + n_blocks * 8)
+    offset = convert(UInt64, 12 + 8n_blocks)
 
     t_variant_types = nothing
     sectors_variant_types = []
@@ -65,13 +66,13 @@ function Header(data::Vector{UInt8})
         data_per_byte = 8 ÷ bits_per_variant_type
         size_variant_types = ceil_int(block_size, data_per_byte)
         #convert(UInt, ceil(block_size / (8 ÷ bits_per_variant_type)))
-        arr = data[offset + 1 : offset + size_variant_types]
+        arr = read(io, size_variant_types) #data[offset + 1 : offset + size_variant_types]
         push!(sectors_variant_types, Ref(arr))
         t_variant_types = typeof(arr)
         offset += size_variant_types
 
         # read variant record length track
-        arr = data[offset + 1 : offset + block_size * bytes_per_record_length]
+        arr = read(io, block_size * bytes_per_record_length) #data[offset + 1 : offset + block_size * bytes_per_record_length]
         reinterpreted = reinterpret(dtype_variant_length, arr)
         t_variant_sizes = typeof(reinterpreted)
         push!(sectors_variant_lengths, Ref(reinterpreted))
@@ -79,7 +80,8 @@ function Header(data::Vector{UInt8})
 
         # read allele counts track
         if sectors_allele_counts !== nothing
-            arr = data[offset + 1:offset + block_size * bytes_allele_counts]
+            arr = read(io, block_size * bytes_allele_counts)
+            #arr = data[offset + 1:offset + block_size * bytes_allele_counts]
             reinterpreted = reinterpret(dtype_allele_counts, arr)
             t_allele_counts = typeof(reinterpreted)
             push!(sectors_allele_counts, Ref(reinterpreted))
@@ -89,7 +91,8 @@ function Header(data::Vector{UInt8})
         # read provisional reference flags track
         if sectors_provisional_reference !== nothing
             size_pr = ceil_int(block_size, 8)#convert(UInt, ceil(block_size / 8))
-            arr = data[offset + 1 : offset + size_pr]
+            arr = read(io, size_pr)
+            #arr = data[offset + 1 : offset + size_pr]
             t_provisional_reference_flags = typeof(arr)
             push!(sectors_provisional_reference, Ref(arr))
             offset += size_pr
@@ -129,6 +132,5 @@ end
 
 function Header(filename::String)
     io = open(filename)
-    data = mmap(io)
-    Header(data)
+    Header(io)
 end

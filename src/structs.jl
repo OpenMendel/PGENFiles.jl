@@ -19,8 +19,9 @@ end
 
 struct Pgen{ST}
     io::IOStream
-    data::Vector{UInt8}
+    data::Union{Nothing, Vector{UInt8}}
     header::Header
+    variant_record_cache::Union{Nothing, Vector{UInt8}} # used only with no_mmap
     genotypes_prev::Vector{UInt8} # for LD-compressed genotypes
     genotypes_cache::Vector{UInt8} # 0x00, 0x01, or 0x02. Byte-aligned for performance.
     dosage_cache::Vector{Float32} # Dosage values are represented by 16-bit numbers, Float32 is enough. 
@@ -28,17 +29,26 @@ struct Pgen{ST}
     difflist_cache_incr::Vector{UInt32}
 end
 
-function Pgen(filename::String)
+function Pgen(filename::String; no_mmap::Bool=false)
     io = open(filename)
-    data = mmap(io)
-    header = Header(data)
+    if !no_mmap
+        data = mmap(io)
+    else
+        data = nothing
+    end
+    header = Header(io)
     ST = bytes_to_UInt[header.bytes_per_sample_id]
+    if !no_mmap
+        variant_record_cache = nothing
+    else
+        variant_record_cache = Vector{UInt8}(undef, maximum(header.variant_lengths))
+    end
     genotypes_prev = Vector{UInt8}(undef, header.n_samples)
     genotypes_cache = Vector{UInt8}(undef, header.n_samples)
     dosage_cache = Vector{Float32}(undef, header.n_samples)
     difflist_cache = Vector{ST}(undef, 64)
     difflist_cache_incr = Vector{UInt32}(undef, 64)
     difflist_cache_incr[1] = 0
-    Pgen{ST}(io, data, header, genotypes_prev, genotypes_cache, dosage_cache, 
-        difflist_cache, difflist_cache_incr)
+    Pgen{ST}(io, data, header, variant_record_cache, genotypes_prev, genotypes_cache, 
+    dosage_cache, difflist_cache, difflist_cache_incr)
 end
