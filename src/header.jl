@@ -99,31 +99,38 @@ function Header(io::IOStream)
         end
     end
     if bits_per_variant_type == 8
+        VTT = ScatteredVector{UInt8, t_variant_types}
         variant_types = ScatteredVector{UInt8, t_variant_types}(
             sectors_variant_types, n_variants, n_blocks)
     else
+        VTT = ScatteredBitsVector{t_variant_types}
         variant_types = ScatteredBitsVector{t_variant_types}(
             sectors_variant_types, bits_per_variant_type, 
             n_variants, n_blocks)
     end
+    VLT = ScatteredVector{dtype_variant_length,t_variant_sizes}
     variant_lengths = ScatteredVector{dtype_variant_length,t_variant_sizes}(
         sectors_variant_lengths, 
         n_variants, n_blocks)
     if sectors_allele_counts !== nothing
+        ACT = ScatteredVector{dtype_allele_counts,t_allele_counts}
         allele_counts = ScatteredVector{dtype_allele_counts,t_allele_counts}(
             sectors_allele_counts, 
             n_variants, n_blocks)
     else
+        ACT = Nothing
         allele_counts = nothing
     end
     if sectors_provisional_reference !== nothing
+        PRFT = ScatteredBitsVector{t_provisional_reference_flags}
         provisional_reference_flags = ScatteredBitsVector{t_provisional_reference_flags}(
             sectors_provisional_reference, 1, 
             n_variants, n_blocks)
     else
+        PRFT = Nothing
         provisional_reference_flags = nothing
     end
-    Header(storage_mode, n_variants, n_samples, 
+    Header{VTT, VLT, ACT, PRFT}(storage_mode, n_variants, n_samples, 
         bits_per_variant_type, bytes_per_record_length, 
         bytes_allele_counts, bytes_per_sample_id, provisional_reference, 
         n_blocks, variant_block_offsets, 

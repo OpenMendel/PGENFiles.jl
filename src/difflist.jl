@@ -1,4 +1,3 @@
-#TODO: test it.
 function parse_difflist(data::AbstractVector{UInt8}, 
     offset::UInt, 
     bytes_per_sample_id::Integer,

@@ -1,5 +1,3 @@
-# TODO: DiffList
-
 struct BitsVector{V} <: AbstractVector{UInt8}
     data::Base.RefValue{V}
     bits_per_element::UInt8

@@ -1,4 +1,4 @@
-struct Header
+struct Header{VTT,VLT,ACT,PRFT}
     # magic number (first two bytes): 0x6c 0x1b. 
     storage_mode::UInt # third byte. restrict to 0x10 for now.
     n_variants::UInt # 4th-7th byte. 
@@ -11,10 +11,10 @@ struct Header
     n_blocks::UInt # number of blocks of 2^16 variants. Int(ceil(n_variants / 2 ^ 16)). 
     variant_block_offsets::Vector{UInt} # record starting points of #0, #65536, ... length of (8 * n_blocks) bytes.
     # The following appear in blocks of 2^16 variants.
-    variant_types::Union{ScatteredBitsVector, ScatteredVector}
-    variant_lengths::ScatteredVector
-    allele_counts::Union{ScatteredVector, Nothing}
-    provisional_reference_flags::Union{ScatteredBitsVector, Nothing}
+    variant_types::VTT # Union{ScatteredBitsVector, ScatteredVector}
+    variant_lengths::VLT # ScatteredVector
+    allele_counts::ACT # Union{ScatteredVector, Nothing}
+    provisional_reference_flags::PRFT # Union{ScatteredBitsVector, Nothing}
 end
 
 struct Pgen{ST}
@@ -51,4 +51,11 @@ function Pgen(filename::String; no_mmap::Bool=false)
     difflist_cache_incr[1] = 0
     Pgen{ST}(io, data, header, variant_record_cache, genotypes_prev, genotypes_cache, 
     dosage_cache, difflist_cache, difflist_cache_incr)
+end
+
+mutable struct Variant
+    index::UInt64 # 1-based
+    offset::UInt64
+    record_type::UInt8
+    length::UInt64
 end
