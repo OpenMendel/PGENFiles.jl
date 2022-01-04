@@ -1,5 +1,6 @@
 module PGEN
 using BitIntegers
+using Tullio
 import Mmap: mmap
 BitIntegers.@define_integers 24
 const variant_type_lengths = Dict(

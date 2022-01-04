@@ -130,11 +130,29 @@ function Header(io::IOStream)
         PRFT = Nothing
         provisional_reference_flags = nothing
     end
+
+    # Store the most recent non-LD-compressed variant for each LD-compressed variant
+    # Useful for random-access of variants
+    most_recent_non_ld = Dict{UInt, Variant}()
+    buf = nothing
+    offset = variant_block_offsets[1]
+    for j in 1:n_variants
+        vt = variant_types[j]
+        vl = variant_lengths[j]
+        if !((vt & 0x07 == 0x02) || (vt & 0x07 == 0x03))
+            buf = Variant(j, offset, vt, vl)
+        else
+            most_recent_non_ld[j] = buf
+        end   
+        offset += vl
+    end
+
     Header{VTT, VLT, ACT, PRFT}(storage_mode, n_variants, n_samples, 
         bits_per_variant_type, bytes_per_record_length, 
         bytes_allele_counts, bytes_per_sample_id, provisional_reference, 
         n_blocks, variant_block_offsets, 
-        variant_types, variant_lengths, allele_counts, provisional_reference_flags)
+        variant_types, variant_lengths, allele_counts, provisional_reference_flags,
+        most_recent_non_ld)
 end
 
 function Header(filename::String)
