@@ -1,10 +1,14 @@
 function parse_difflist(data::AbstractVector{UInt8}, 
-    offset::UInt, 
+    offset::Integer, 
     bytes_per_sample_id::Integer,
     has_genotype::Bool)
     # length
     len, offset = decode_single(data; offset=offset)
-
+    # length-zero list
+    if len == 0
+        return DiffList{Nothing, Nothing, Nothing, Nothing}(
+            0, Ref(nothing), Ref(nothing), has_genotype, nothing, Ref(nothing)), offset
+    end
     # sample id bases
     n_groups = ceil_int(len, 0x000040) # 64 in decimal
     sample_id_dtype = bytes_to_UInt[bytes_per_sample_id]
@@ -28,8 +32,10 @@ function parse_difflist(data::AbstractVector{UInt8},
 
     # final component: differences of indices
     final_component_size = sum(final_component_sizes) + 63 * length(final_component_sizes)
-    last_group_size = len % 64 - 1
-    last_group_size = last_group_size == -1 ? 63 : last_group_size
+    last_group_size = len % 64
+    last_group_size = last_group_size == 0 ? 64 : last_group_size
+    # increment has one less value
+    last_group_size -= 1
     last_incr_size = size_n(data, last_group_size, offset + final_component_size)
     final_component_size += last_incr_size
     final_component = view(data, offset + 1 : offset + final_component_size)
@@ -42,6 +48,7 @@ function parse_difflist(data::AbstractVector{UInt8},
         genotypes, Ref(final_component)), offset
 end
 
+# The resulting sample idx is 1-based.
 function parse_difflist_sampleids!(idx::AbstractArray, idx_incr::AbstractArray, 
         dl::DiffList, gid::Integer, sid_incr_offset::Union{Nothing, UInt} = nothing)
     n_groups = ceil_int(dl.len, 64)
@@ -53,14 +60,15 @@ function parse_difflist_sampleids!(idx::AbstractArray, idx_incr::AbstractArray,
         end
     end
     idx_incr[1] = 0
-    baseidx = dl.sample_id_bases[][gid]
+    # offset by one to make it 1-based.
+    baseidx = dl.sample_id_bases[][gid] + 1
     if gid != n_groups
         decode_multiple!(@view(idx_incr[2:end]), dl.sample_id_increments[]; offset = UInt(sid_incr_offset))
         cumsum!(idx_incr, idx_incr)
         idx .= baseidx .+ idx_incr
     else
         count = dl.len % 64
-        count == 0 ? 64 : count
+        count = count == 0 ? 64 : count
         decode_multiple!(@view(idx_incr[2:end]), dl.sample_id_increments[]; 
             count = count - 1, offset = UInt(sid_incr_offset))
         cumsum!(view(idx_incr, 1:count), view(idx_incr, 1:count))

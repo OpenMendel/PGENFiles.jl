@@ -44,6 +44,6 @@ function iterator(p::Pgen; startidx=1)
     if startidx == 1
         VariantIteratorBase(p)
     else
-        @error "Not implemented."
+        @assert false "Not implemented."
     end
 end

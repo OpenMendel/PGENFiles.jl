@@ -10,9 +10,7 @@
             offset += j
             break
         end
-        if j == 5
-            @error "incorrect encoding of a ULEB128 number"
-        end
+        @assert j < 5 "incorrect encoding of a ULEB128 number"
         shift += 0x07
     end
     return output, offset
@@ -33,9 +31,7 @@ function decode_multiple!(output::AbstractVector{UInt32},
                 offset += j 
                 break
             end
-            if j == 5
-                @error "incorrect encoding of a ULEB128 number"
-            end
+            @assert j < 5 "incorrect encoding of a ULEB128 number"
             shift += 0x07
         end
         output[i] = o
@@ -53,9 +49,7 @@ function size_n(input::AbstractVector{UInt8}, n::Integer, offset::UInt)
                 offset += j
                 break
             end
-            if j == 5
-                @error "incorrect encoding of a ULEB128 number"
-            end
+            @assert j < 5 "incorrect encoding of a ULEB128 number"
         end
     end
     r

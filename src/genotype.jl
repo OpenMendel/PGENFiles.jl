@@ -1,8 +1,15 @@
 const flipmap = [0x02, 0x01, 0x00, 0x03]
 const onebitmap = [0x00 => 0x01, 0x00 => 0x02, 0x00 => 0x03, 
     0xff => 0xff, 0x01 => 0x02, 0x01 => 0x03, 0xff => 0xff, 0xff => 0xff, 0x02 => 0x03]
-function get_genotypes!(buf::Vector{UInt8}, p::Pgen, v::Variant)
+    
+function get_genotypes!(buf::Vector{UInt8}, p::Pgen, v::Variant; 
+    prev_buf::Union{Nothing, Vector{UInt8}}=nothing)
     compression_type = v.record_type & 0x07
+    @assert v.record_type & 0x08 == 0 "Multiallelic case unsupported"
+    if (compression_type == 0x02 || compression_type == 0x03) && prev_buf === nothing
+        # load most recent non-LD-compressed dosage
+        get_genotypes!(buf, p, p.header.most_recent_non_ld[v.index])
+    end
     if p.variant_record_cache !== nothing
         seek(p.io, v.offset)
         p.variant_record_cache .= read(p.io, v.length)
@@ -15,10 +22,10 @@ function get_genotypes!(buf::Vector{UInt8}, p::Pgen, v::Variant)
     elseif compression_type == 0x01
         offset = _get_genotypes_1bit!(buf, p, variant_record)
     elseif compression_type == 0x02 || compression_type == 0x03
-        # TODO: skip repeated get_genotypes! call for iterative scan
-        get_genotypes!(buf, p, p.header.most_recent_non_ld[v.index])
         if compression_type == 0x03
-            @tullio buf[i] = flipmap[buf[i]]
+            for i in 1:p.header.n_samples
+                buf[i] = flipmap[buf[i] + 1]
+            end
         end
         offset = _get_genotypes_difflist!(buf, p, variant_record)
     elseif compression_type == 0x04 || compression_type == 0x06 || compression_type == 0x07
@@ -33,7 +40,7 @@ function get_genotypes!(buf::Vector{UInt8}, p::Pgen, v::Variant)
     else
         @error "invalid compression type"
     end
-    buf
+    buf, variant_record, offset
 end
 
 function get_genotypes(p::Pgen, v::Variant)
@@ -62,17 +69,17 @@ function _get_genotypes_1bit!(buf::Vector{UInt8}, p::Pgen, variant_record::Abstr
         buf[i] = bv[i] == 0x01 ? trueval : falseval
     end
     dl, offset = parse_difflist(variant_record, UInt(n_bytes + 1), p.header.bytes_per_sample_id, true)
-    get_difflist_genotypes!(buf, p, dl)
+    _get_difflist_genotypes!(buf, p, dl)
     offset
 end
 
 function _get_genotypes_difflist!(buf::Vector{UInt8}, p::Pgen, variant_record::AbstractVector{UInt8})
     dl, offset = parse_difflist(variant_record, zero(UInt), p.header.bytes_per_sample_id, true)
-    get_difflist_genotypes!(buf, p, dl)
+    _get_difflist_genotypes!(buf, p, dl)
     offset
 end
 
-function get_difflist_genotypes!(buf::Vector{UInt8}, p::Pgen, dl::DiffList)
+function _get_difflist_genotypes!(buf::Vector{UInt8}, p::Pgen, dl::DiffList)
     ngroups = (dl.len + 63) ÷ 64
     for gid in 1:ngroups
         parse_difflist_sampleids!(p.difflist_cache, p.difflist_cache_incr, dl, gid)
