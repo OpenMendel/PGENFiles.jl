@@ -1,6 +1,5 @@
 module PGEN
 using BitIntegers
-using Tullio
 import Mmap: mmap
 BitIntegers.@define_integers 24
 const variant_type_lengths = Dict(
@@ -15,7 +14,6 @@ include("base_structs.jl")
 include("structs.jl")
 include("header.jl")
 include("difflist.jl")
-include("variant.jl")
 include("iterator.jl")
 include("genotype.jl")
 include("dosage.jl")

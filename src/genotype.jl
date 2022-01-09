@@ -53,9 +53,9 @@ function _get_genotypes_no_compression!(buf::Vector{UInt8}, p::Pgen, variant_rec
     n_samples = p.header.n_samples
     n_bytes = (n_samples + 3) >> 2
     genotypes_raw_cache = @view variant_record[1:n_bytes]
-    @tullio buf[i] = @inbounds begin
+    @inbounds for i in 1:n_samples
         ip3 = i + 3
-        (genotypes_raw_cache[ip3 >> 2] >> ((ip3 & 0x03) << 1)) & 0x03
+        buf[i] = (genotypes_raw_cache[ip3 >> 2] >> ((ip3 & 0x03) << 1)) & 0x03
     end
     n_bytes
 end
