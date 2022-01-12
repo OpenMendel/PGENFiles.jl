@@ -22,12 +22,12 @@ function get_genotypes!(buf::Vector{UInt8}, p::Pgen, v::Variant;
     elseif compression_type == 0x01
         offset = _get_genotypes_1bit!(buf, p, variant_record)
     elseif compression_type == 0x02 || compression_type == 0x03
+        offset = _get_genotypes_difflist!(buf, p, variant_record)
         if compression_type == 0x03
             for i in 1:p.header.n_samples
-                buf[i] = flipmap[buf[i] + 1]
+                buf[i] = flipmap[buf[i] + 0x01]
             end
         end
-        offset = _get_genotypes_difflist!(buf, p, variant_record)
     elseif compression_type == 0x04 || compression_type == 0x06 || compression_type == 0x07
         if compression_type == 0x04
             fill!(buf, 0x00)

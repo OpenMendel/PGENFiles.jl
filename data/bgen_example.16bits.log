@@ -1,0 +1,29 @@
+PLINK v2.00a3LM 64-bit Intel (2 Mar 2021)
+Options in effect:
+  --bgen example.16bits.bgen ref-last
+  --make-pgen
+  --out bgen_example.16bits
+
+Hostname: REDLBISCOR01
+Working directory: /home/kose/.julia/dev/PGEN/data
+Start time: Tue Jan 11 15:36:51 2022
+
+Random number seed: 1641944211
+64128 MiB RAM detected; reserving 32064 MiB for main workspace.
+Allocated 7608 MiB successfully, after larger attempt(s) failed.
+Using up to 24 threads (change this with --threads).
+--bgen: 199 variants detected, format v1.2.
+--bgen: 500 sample IDs written to bgen_example.16bits-temporary.psam .
+--bgen: bgen_example.16bits-temporary.pgen + bgen_example.16bits-temporary.pvar
+written.
+500 samples (0 females, 0 males, 500 ambiguous; 500 founders) loaded from
+bgen_example.16bits-temporary.psam.
+199 variants loaded from bgen_example.16bits-temporary.pvar.
+Note: No phenotype data present.
+Warning: Variants are not sorted by position.  Consider rerunning with the
+--sort-vars flag added to remedy this.
+Writing bgen_example.16bits.psam ... done.
+Writing bgen_example.16bits.pvar ... done.
+Writing bgen_example.16bits.pgen ... done.
+
+End time: Tue Jan 11 15:36:51 2022
