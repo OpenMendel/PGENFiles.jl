@@ -78,7 +78,7 @@ end
     d_pgen = Array{Float64}(undef, p.header.n_samples)
     for (v_bgen, v_pgen) in zip(iterator(b), PGEN.iterator(p)) # 
         d_bgen = BGEN.ref_allele_dosage!(b, v_bgen)
-        PGEN.alt_allele_dosage!(d_pgen,p, v_pgen; genotypebuf=g_pgen)
+        PGEN.alt_allele_dosage!(d_pgen, g_pgen, p, v_pgen)
         @test all(isapprox.(d_bgen, d_pgen; atol=5e-5, nans=true))
     end
 end
