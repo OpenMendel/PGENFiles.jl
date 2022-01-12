@@ -17,4 +17,5 @@ include("difflist.jl")
 include("iterator.jl")
 include("genotype.jl")
 include("dosage.jl")
+datadir(parts...) = joinpath(@__DIR__, "..", "data", parts...)
 end
