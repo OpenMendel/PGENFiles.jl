@@ -3,6 +3,22 @@ const basemap_Float64 = [0.0, 1.0, 2.0, NaN]
 const dosage_unit_Float64 = 1/(1 << 14)
 const dosage_unit_Float32 = Float32(dosage_unit_Float64)
 
+"""
+    alt_allele_dosage!(buf, genobuf, p, v; genoldbuf)
+
+Computes unphased biallelic dosage of ALT allele. 
+
+- `buf`: stores dosage values.
+- `genobuf`: stores genotype values.
+- `p`: a `Pgen` object.
+- `v`: a `Variant` object.
+- `genoldbuf`: most recent non-LD-compressed genotypes.
+
+Returns: 
+- `buf`
+- `genobuf`
+- `offset`: end of dosage record on the current variant record track.
+"""
 function alt_allele_dosage!(buf::AbstractVector{T}, genobuf::AbstractVector{UInt8}, 
     p::Pgen, v::Variant;
     genoldbuf::Union{Nothing, Vector{UInt8}}=nothing
@@ -65,6 +81,22 @@ function alt_allele_dosage!(buf::AbstractVector{T}, genobuf::AbstractVector{UInt
     return buf, genobuf, offset
 end
 
+"""
+    ref_allele_dosage!(buf, genobuf, p, v; genoldbuf)
+
+Computes unphased biallelic dosage of REF allele. 
+
+- `buf`: stores dosage values.
+- `genobuf`: stores genotype values.
+- `p`: a `Pgen` object.
+- `v`: a `Variant` object.
+- `genoldbuf`: most recent non-LD-compressed genotypes.
+
+Returns: 
+- `buf`
+- `genobuf`
+- `offset`: end of dosage record on the current variant record track.
+"""
 function ref_allele_dosage!(buf::AbstractVector{T}, genobuf::AbstractVector{UInt8}, 
     p::Pgen, v::Variant; 
     genoldbuf::Union{Nothing, Vector{UInt8}}=nothing
@@ -76,6 +108,19 @@ function ref_allele_dosage!(buf::AbstractVector{T}, genobuf::AbstractVector{UInt
     return buf, genobuf, offset
 end
 
+"""
+    alt_allele_dosage(p, v)
+
+Computes unphased biallelic dosage of ALT allele. 
+
+- `p`: a `Pgen` object.
+- `v`: a `Variant` object.
+
+Returns: 
+- `buf`: stores dosage values.
+- `genobuf`: stores genotype values.
+- `offset`: end of dosage record on the current variant record track.
+"""
 function alt_allele_dosage(p::Pgen, v::Variant)
     n_samples = p.header.n_samples
     buf = Vector{Float32}(undef, n_samples)
@@ -83,6 +128,19 @@ function alt_allele_dosage(p::Pgen, v::Variant)
     alt_allele_dosage!(buf, genobuf, p, v)
 end
 
+"""
+    ref_allele_dosage(p, v)
+
+Computes unphased biallelic dosage of REF allele. 
+
+- `p`: a `Pgen` object.
+- `v`: a `Variant` object.
+
+Returns: 
+- `buf`: stores dosage values.
+- `genobuf`: stores genotype values.
+- `offset`: end of dosage record on the current variant record track.
+"""
 function ref_allele_dosage(p::Pgen, v::Variant)
     n_samples = p.header.n_samples
     buf = Vector{Float32}(undef, n_samples)
@@ -117,6 +175,7 @@ function _phase_offset(p::Pgen, g::AbstractVector{UInt8},
     return offset
 end
 
+# replaces the dosage in `buf` with the values in the `DiffList` `dl`. 
 function _get_difflist_dosage!(buf::Vector{T}, p::Pgen, dl::DiffList, 
     variant_record::AbstractVector{UInt8}, offset::Integer) where T <: AbstractFloat
     ngroups = (dl.len + 63) ÷ 64

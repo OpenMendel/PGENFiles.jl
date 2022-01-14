@@ -10,7 +10,7 @@ const bytes_to_UInt = Dict(0x01 => UInt8, 0x02 => UInt16, 0x03 => UInt24, 0x04 =
 const mask_map = [0x01, 0x03, 0x00, 0x0f, 0x00, 0x00, 0x00, 0xff]
 @inline ceil_int(x::Integer, y::Integer) = (x ÷ y) + (x % y != 0)
 include("uleb128.jl")
-include("base_structs.jl")
+include("internal_structs.jl")
 include("structs.jl")
 include("header.jl")
 include("difflist.jl")

@@ -1,14 +1,33 @@
 const flipmap = [0x02, 0x01, 0x00, 0x03]
 const onebitmap = [0x00 => 0x01, 0x00 => 0x02, 0x00 => 0x03, 
     0xff => 0xff, 0x01 => 0x02, 0x01 => 0x03, 0xff => 0xff, 0xff => 0xff, 0x02 => 0x03]
-    
+
+"""
+    get_genotypes!(buf, p, v; ldbuf)
+
+Computes unphased biallelic dosage of ALT allele. 
+
+- `buf`: stores genotype values.
+- `p`: a `Pgen` object.
+- `v`: a `Variant` object.
+- `ldbuf`: most recent non-LD-compressed genotypes.
+
+Returns: 
+- `buf`: resulting genotype values
+- `variant_record`: current record for variant
+- `offset`: end of dosage record on the current variant record track.
+"""
 function get_genotypes!(buf::Vector{UInt8}, p::Pgen, v::Variant; 
-    prev_buf::Union{Nothing, Vector{UInt8}}=nothing)
+    ldbuf::Union{Nothing, Vector{UInt8}}=nothing)
     compression_type = v.record_type & 0x07
     @assert v.record_type & 0x08 == 0 "Multiallelic case unsupported"
-    if (compression_type == 0x02 || compression_type == 0x03) && prev_buf === nothing
-        # load most recent non-LD-compressed dosage
-        get_genotypes!(buf, p, p.header.most_recent_non_ld[v.index])
+    if (compression_type == 0x02 || compression_type == 0x03) 
+        if ldbuf === nothing
+            # load most recent non-LD-compressed dosage
+            get_genotypes!(buf, p, p.header.most_recent_non_ld[v.index])
+        else
+            buf .= ldbuf
+        end
     end
     if p.variant_record_cache !== nothing
         seek(p.io, v.offset)
@@ -43,6 +62,19 @@ function get_genotypes!(buf::Vector{UInt8}, p::Pgen, v::Variant;
     buf, variant_record, offset
 end
 
+"""
+    get_genotypes(p, v)
+
+Computes unphased biallelic dosage of ALT allele. 
+
+- `p`: a `Pgen` object.
+- `v`: a `Variant` object.
+
+Returns: 
+- `buf`: resulting genotype values
+- `variant_record`: current record for variant
+- `offset`: end of dosage record on the current variant record track.
+"""
 function get_genotypes(p::Pgen, v::Variant)
     buf = Vector{UInt8}(undef, p.header.n_samples)
     get_genotypes!(buf, p, v)

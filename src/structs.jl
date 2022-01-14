@@ -38,6 +38,11 @@ struct Pgen{ST}
     difflist_cache_incr::Vector{UInt32}
 end
 
+"""
+    Pgen(filename; no_mmap)
+
+Creates an instance of `Pgen` from `filename`. `no_mmap` chooses whether to use `Mmap`.
+"""
 function Pgen(filename::String; no_mmap::Bool=false)
     io = open(filename)
     if !no_mmap

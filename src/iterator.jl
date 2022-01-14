@@ -38,6 +38,7 @@ end
 
 """
     iterator(p::Pgen; startidx=1)
+    
 Retrieve a variant iterator for `p`.
 """
 function iterator(p::Pgen; startidx=1)

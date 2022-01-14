@@ -1,3 +1,7 @@
+"""
+    decode_single(input::AbstractVector{UInt8}; offset=zero(UInt))
+Decode a single value of ULEB128 from `input`, starting with `offset + 1`-th byte.
+"""
 @inline function decode_single(input::AbstractVector{UInt8}; 
     offset::UInt=zero(UInt)
     )
@@ -16,6 +20,12 @@
     return output, offset
 end
 
+"""
+    decode_multiple!(output::AbstractVector{UInt32}, input::AbstractVector{UInt8}; 
+    offset=zero(UInt))
+
+Decode `count` values of ULEB128 from `input`, starting with `offset + 1`-th byte.
+"""
 function decode_multiple!(output::AbstractVector{UInt32}, 
     input::AbstractVector{UInt8};
     count::Integer = length(output), 

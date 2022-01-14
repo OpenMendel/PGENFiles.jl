@@ -1,3 +1,8 @@
+"""
+    parse_difflist(data, offset, bytes_per_sample_id, has_genotypes)
+
+Parses a single `DiffList` from `data`, starting with `offset + 1`-th byte.
+"""
 function parse_difflist(data::AbstractVector{UInt8}, 
     offset::Integer, 
     bytes_per_sample_id::Integer,
@@ -48,7 +53,11 @@ function parse_difflist(data::AbstractVector{UInt8},
         genotypes, Ref(final_component)), offset
 end
 
-# The resulting sample idx is 1-based.
+"""
+    parse_difflist_sampleids!(idx, idx_incr, dl, gid, sid_incr_offset=nothing)
+
+Parses a `gid`-th group of 64 sample ids in a `DiffList` `dl` into `idx`. 
+"""
 function parse_difflist_sampleids!(idx::AbstractArray, idx_incr::AbstractArray, 
         dl::DiffList, gid::Integer, sid_incr_offset::Union{Nothing, UInt} = nothing)
     n_groups = ceil_int(dl.len, 64)
