@@ -11,7 +11,7 @@ It can store both hard calls and imputed data, unphased genotypes and phased hap
 
 ## Installation
 
-This package requires Julia v1.0 or later, which can be obtained from
+This package requires Julia v1.6 or later, which can be obtained from
 https://julialang.org/downloads/ or by building Julia from the sources in the
 https://github.com/JuliaLang/julia repository.
 
