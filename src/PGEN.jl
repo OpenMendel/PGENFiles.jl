@@ -1,6 +1,8 @@
 module PGEN
 using BitIntegers
 import Mmap: mmap
+export Pgen, iterator, n_samples, n_variants, get_genotypes, get_genotypes!
+export alt_allele_dosage, alt_allele_dosage!, ref_allele_dosage, ref_allele_dosage!
 BitIntegers.@define_integers 24
 const variant_type_lengths = Dict(
     0x00 => (4, 1), 0x01 => (4, 2), 0x02 => (4, 3), 0x03 => (4, 4),

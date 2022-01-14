@@ -7,7 +7,8 @@ makedocs(
     clean = true,
     debug = true,
     pages = [
-        "index.md"
+        "PGEN.jl Tutorial" => "index.md",
+        "PGEN format description" => "PGEN_description.md"
     ]
 )
 

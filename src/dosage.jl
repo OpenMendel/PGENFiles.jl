@@ -26,7 +26,7 @@ function alt_allele_dosage!(buf::AbstractVector{T}, genobuf::AbstractVector{UInt
     n_samples = p.header.n_samples
     @assert length(buf) == n_samples && length(genobuf) == n_samples
 
-    _, variant_record, offset = get_genotypes!(genobuf, p, v; prev_buf=genoldbuf)
+    _, variant_record, offset = get_genotypes!(genobuf, p, v; ldbuf=genoldbuf)
 
     # convert genotype to floating-point values
     basemap = T == Float32 ? basemap_Float32 : basemap_Float64

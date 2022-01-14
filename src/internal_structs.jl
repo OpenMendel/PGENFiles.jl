@@ -9,6 +9,11 @@ struct BitsVector{V} <: AbstractVector{UInt8}
     size::UInt
 end
 
+function BitsVector(data::AbstractVector{UInt8}, bits_per_element, size)
+    V = typeof(data)
+    BitsVector{V}(Ref(data), bits_per_element, size)
+end
+
 """
     ScatteredBitsVector{V}(data_sectors, bits_per_element, size, n_blocks)
 
@@ -71,6 +76,6 @@ mutable struct DiffList{V,W,X,Y}
     sample_id_bases::Base.RefValue{V}
     last_component_sizes::Base.RefValue{W}
     has_genotypes::Bool
-    genotypes::Union{BitsVector{X}, Nothing}
+    genotypes::X # Union{BitsVector{X}, Nothing}
     sample_id_increments::Base.RefValue{Y}
 end

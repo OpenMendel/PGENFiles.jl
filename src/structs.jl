@@ -69,4 +69,5 @@ function Pgen(filename::String; no_mmap::Bool=false)
     dosage_cache, difflist_cache, difflist_cache_incr)
 end
 
-
+@inline n_variants(p::Pgen) = p.header.n_variants
+@inline n_samples(p::Pgen) = p.header.n_samples
