@@ -80,24 +80,24 @@ e.g., random access to 65540-th (65536 + 4) variant can be achieved by scannig f
 ### Variant record
 
 Each variant record starts with the main track for unphased biallelic hard-call genotypes, followed by the ten optional tracks:
-1. Multiallelic hard-calls
-2. Hardcall-phase information
+1. Multiallelic hard-calls (not implemented, will error)
+2. Hardcall-phase information (not implmented, skipped)
 3. Biallelic dosage existence
 4. Biallelic dosage values
-5. Multiallelic dosage existence
-6. Multiallelic dosage values
-7. Biallelic phased-dosage existence
-8. Biallelic phased-dosage values
-9. Multiallelic phased-dosage existence
-10. Multiallelic phased-dosage values
+5. Multiallelic dosage existence (not implmented, spec is not complete, not read)
+6. Multiallelic dosage values (not implmented, spec is not complete, not read)
+7. Biallelic phased-dosage existence (not implemented, not read)
+8. Biallelic phased-dosage values (not implemented, not read)
+9. Multiallelic phased-dosage existence (not implmented, spec is not complete, not read)
+10. Multiallelic phased-dosage values (not implmented, spec is not complete, not read)
 
 
 ### Difflists
-Many genotypes and dosages are compressed in a __difflist__. It is designed to represent a sparse list of differences from something else. It does so in a manner that is compact, and supports fast checking of whether a specific sample ID is in the list. Struct for difflist is in the struct `DiffList`. 
+Many genotypes and dosages are compressed in a __difflist__. It is designed to represent a sparse list of differences from something else. It does so in a manner that is compact, and supports fast checking of whether a specific sample ID is in the list. Struct for difflist is in the struct `DiffList`. It optionally contains genotype values for the samples listed.
 
 ### Main track
 
-Each genotype is represented in two-bit little-endian ordering: e.g., the for the two bytes of `0x1b 0xd8` for 8 samples:
+Each genotype is represented in two-bit little-endian: e.g., the for the two bytes of `0x1b 0xd8` for 8 samples:
 
 ```
 byte 1         byte 2
