@@ -75,11 +75,18 @@ end
     b = Bgen(PGEN.datadir("example.16bits.bgen"))
     p = PGEN.Pgen(data)
     g_pgen = Array{UInt8}(undef, p.header.n_samples)
+    g_pgen_ld = similar(g_pgen)
     d_pgen = Array{Float64}(undef, p.header.n_samples)
     for (v_bgen, v_pgen) in zip(BGEN.iterator(b), PGEN.iterator(p)) # 
         d_bgen = BGEN.ref_allele_dosage!(b, v_bgen)
-        PGEN.alt_allele_dosage!(d_pgen, g_pgen, p, v_pgen)
+        PGEN.alt_allele_dosage!(d_pgen, g_pgen, p, v_pgen)      
         @test all(isapprox.(d_bgen, d_pgen; atol=5e-5, nans=true))
+        PGEN.alt_allele_dosage!(d_pgen, g_pgen, p, v_pgen; genoldbuf=g_pgen_ld)  
+        @test all(isapprox.(d_bgen, d_pgen; atol=5e-5, nans=true))
+        v_rt = v_pgen.record_type & 0x07
+        if v_rt != 0x02 && v_rt != 0x03 # non-LD-compressed. See Format description.
+            g_pgen_ld .= g_pgen
+        end
     end
 end
 end
