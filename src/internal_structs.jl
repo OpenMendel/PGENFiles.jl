@@ -68,7 +68,7 @@ Data structure for difflists.
 """
 mutable struct DiffList{SIBT,GT<:Union{Nothing,BitsVector}}
     len::UInt32
-    sample_id_bases::Ptr{SIBT}
+    sample_id_bases::SIBT
     last_component_sizes::Ptr{UInt8}
     has_genotypes::Bool
     genotypes::GT

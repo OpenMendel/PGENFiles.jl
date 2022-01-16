@@ -17,9 +17,9 @@ function parse_difflist(data::AbstractVector{UInt8},
     end
     # sample id bases
     n_groups = ceil_int(len, 0x000040) # 64 in decimal
-    sample_id_bases = reinterpret(Ptr{sample_id_dtype}, pointer(data, offset + 1))
-    # reinterpret(sample_id_dtype, view(data, 
-    #     Int(offset + 1) : Int(offset + n_groups * bytes_per_sample_id)))
+    sample_id_bases = reinterpret(sample_id_dtype, view(data, 
+        Int(offset + 1) : Int(offset + n_groups * bytes_per_sample_id)))
+
     offset += n_groups * bytes_per_sample_id
 
     # sizes of the final components
@@ -50,7 +50,7 @@ function parse_difflist(data::AbstractVector{UInt8},
     # TODO: defer computation of offset of the last block to parse_difflist_sampleids!
     offset += final_component_size
 
-    DiffList{sample_id_dtype,typeof(genotypes)}(
+    DiffList{typeof(sample_id_bases),typeof(genotypes)}(
         len, sample_id_bases, pointer(final_component_sizes), 
         has_genotype,
         genotypes, final_component), offset
@@ -75,7 +75,7 @@ function parse_difflist_sampleids!(idx::AbstractArray, idx_incr::AbstractArray,
     end
     idx_incr[1] = 0
     # offset by one to make it 1-based.
-    baseidx = unsafe_load(dl.sample_id_bases, gid) + 1#dl.sample_id_bases[][gid] + 1
+    baseidx = dl.sample_id_bases[gid] + 1
     if gid != n_groups
         decode_multiple!(pointer(idx_incr, 2), dl.sample_id_increments; 
             count = 63, offset = UInt(sid_incr_offset))
@@ -83,12 +83,19 @@ function parse_difflist_sampleids!(idx::AbstractArray, idx_incr::AbstractArray,
         idx .= baseidx .+ idx_incr
     else
         count = dl.len % 64
-        count = count == 0 ? 64 : count
+        count = count == 0 ? 0x00000040 : count
         decode_multiple!(pointer(idx_incr, 2), dl.sample_id_increments; 
             count = count - 1, offset = UInt(sid_incr_offset))
-        cumsum!(view(idx_incr, 1:count), view(idx_incr, 1:count))
-        idx[1:count] .= baseidx .+ view(idx_incr, 1:count)
-        fill!(@view(idx[(count + 1):end]), 0)
+        idx[1] = baseidx
+        @inbounds for i in 2:count
+            idx[i] = idx[i-1] + idx_incr[i]
+        end
+        @inbounds for i in (count + 1):length(idx)
+            idx[i] = 0
+        end
+        # cumsum!(view(idx_incr, 1:count), view(idx_incr, 1:count))
+        # idx[1:count] .= baseidx .+ view(idx_incr, 1:count)
+        # fill!(@view(idx[(count + 1):end]), 0)
     end
     idx
 end

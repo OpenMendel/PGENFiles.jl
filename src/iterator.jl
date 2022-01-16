@@ -14,6 +14,7 @@ Variant iterator that iterates from the beginning of the Pgen file
 """
 struct VariantIteratorBase <: VariantIterator
     p::Pgen
+    v::Variant
 end
 
 function Base.iterate(vi::VariantIteratorBase,
@@ -22,9 +23,12 @@ function Base.iterate(vi::VariantIteratorBase,
         return nothing
     else
         idx = state[1]
-        v = Variant(idx, state[2], vi.p.header.variant_types[idx], vi.p.header.variant_lengths[idx])
-        nextstate = (idx + 1, state[2] + vi.p.header.variant_lengths[idx])
-        return (v, nextstate)
+        vi.v.index = state[1]
+        vi.v.offset = state[2]
+        vi.v.record_type = vi.p.header.variant_types[idx]
+        vi.v.length = vi.p.header.variant_lengths[idx]
+        nextstate = (idx + 1, state[2] + vi.v.length)
+        return (vi.v, nextstate)
     end
 end
 
@@ -43,8 +47,17 @@ Retrieve a variant iterator for `p`.
 """
 function iterator(p::Pgen; startidx=1)
     if startidx == 1
-        VariantIteratorBase(p)
+        v = Variant(0, 0, 0, 0)
+        VariantIteratorBase(p, v)
     else
         @assert false "Not implemented."
     end
+end
+
+@inline function set_first_variant!(v::Variant, p::Pgen)
+    v.index = 1
+    v.offset = offset_first_variant(p)
+    v.record_type = p.header.variant_types[1]
+    v.length = p.header.variant_lengths[1]
+    v
 end
