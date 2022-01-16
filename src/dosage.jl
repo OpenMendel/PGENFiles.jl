@@ -186,7 +186,7 @@ function _get_difflist_dosage!(buf::Vector{T}, p::Pgen, dl::DiffList,
     dosage_unit = T == Float32 ? dosage_unit_Float32 : dosage_unit_Float64
     dosages = reinterpret(UInt16, @view(variant_record[offset + 1 : offset + 2 * dl.len]))
     for gid in 1:ngroups
-        parse_difflist_sampleids!(p.difflist_cache, p.difflist_cache_incr, dl, gid)
+        parse_difflist_sampleids!(p.difflist_cache_idx, p.difflist_cache_incr, dl, gid)
         for (idx, sampleid) in enumerate(p.difflist_cache)
             totalidx = 64 * (gid - 1) + idx
             if totalidx > dl.len
