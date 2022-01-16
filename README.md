@@ -1,6 +1,6 @@
 # PGEN.jl
 [![](https://img.shields.io/badge/docs-latest-blue.svg)](https://OpenMendel.github.io/PGEN.jl/dev)
-[![](https://img.shields.io/badge/docs-stable-blue.svg)](https://OpenMendel.github.io/PGEN.jl/stable)
+<!--[![](https://img.shields.io/badge/docs-stable-blue.svg)](https://OpenMendel.github.io/PGEN.jl/stable)-->
 [![codecov](https://codecov.io/gh/OpenMendel/PGEN.jl/branch/main/graph/badge.svg?token=W28QPREGC7)](https://codecov.io/gh/OpenMendel/PGEN.jl)
 [![build Actions Status](https://github.com/OpenMendel/PGEN.jl/workflows/CI/badge.svg)](https://github.com/OpenMendel/PGEN.jl/actions)
 
@@ -11,7 +11,7 @@ It can store both hard calls and imputed data, unphased genotypes and phased hap
 
 ## Installation
 
-This package requires Julia v1.0 or later, which can be obtained from
+This package requires Julia v1.6 or later, which can be obtained from
 https://julialang.org/downloads/ or by building Julia from the sources in the
 https://github.com/JuliaLang/julia repository.
 
