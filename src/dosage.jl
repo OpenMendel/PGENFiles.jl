@@ -61,7 +61,8 @@ function alt_allele_dosage!(buf::AbstractVector{T}, genobuf::AbstractVector{UInt
         offset += 2 * n_samples
     else # track 3 is a bitarray for dosage existence in track 4. 
         bv_nbytes = (n_samples + 7) >> 3
-        bv = BitsVector(@view(variant_record[offset + 1 : offset + bv_nbytes]), 1, n_samples)
+        bv = BitsVector(pointer(variant_record, offset + 1), 1, n_samples)
+        #BitsVector(@view(variant_record[offset + 1 : offset + bv_nbytes]), 1, n_samples)
         offset += bv_nbytes
         dosage_len = sum(bv)
         dosages = reinterpret(UInt16, @view(variant_record[offset + 1 : offset + 2 * dosage_len]))

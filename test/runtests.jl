@@ -33,10 +33,11 @@ end
     write(io, 0x88)
     write(io, 0x13)
     write(io, 0x00)
+
     write(io, 0x88)
     write(io, 0xf5)
     write(io, 0x04)
-    
+
     write(io, 0x3f)
     
     for i in 1:20
@@ -54,16 +55,17 @@ end
     @test dl.len == 79
     @test all(dl.genotypes .== 0)
     @test dl.has_genotypes
-    @test dl.last_component_sizes[][1] == 0x3f
-    @test dl.sample_id_bases[][1] == 5000
-    @test dl.sample_id_bases[][2] == 325000
-    @test length(dl.sample_id_increments[]) == 154
+    @test unsafe_load(dl.last_component_sizes, 1) == 0x3f
+    @test dl.sample_id_bases[1] == 5000
+    @test dl.sample_id_bases[2] == 325000
+    #@test length(dl.sample_id_increments[]) == 154
     idx = Vector{UInt32}(undef, 64)
     idx_incr = Vector{UInt32}(undef, 64)
     PGEN.parse_difflist_sampleids!(idx, idx_incr, dl, 1)
     @test all(idx .== [5000 * i for i in 1:64] .+ 1)
     PGEN.parse_difflist_sampleids!(idx, idx_incr, dl, 2)
     @test all(idx[1:15] .== [5000 * (64 + i) for i in 1:15] .+ 1) # for idx 65..79
+    @test all(idx[16:end] .== 0)
 
     rm("dummy", force=true)
 end

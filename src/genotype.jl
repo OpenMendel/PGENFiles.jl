@@ -34,7 +34,7 @@ function get_genotypes!(buf::Vector{UInt8}, p::Pgen, v::Variant;
         p.variant_record_cache .= read(p.io, v.length)
         variant_record = p.variant_record_cache
     else
-        variant_record = @view p.data[v.offset + 1 : v.offset + v.length]
+        variant_record = @view p.data[Int(v.offset + 1) : Int(v.offset + v.length)]
     end
     if compression_type == 0x00
         offset = _get_genotypes_no_compression!(buf, p, variant_record)
@@ -96,7 +96,7 @@ function _get_genotypes_1bit!(buf::Vector{UInt8}, p::Pgen, variant_record::Abstr
     n_samples = p.header.n_samples
     n_bytes = (n_samples + 7) >> 3 
     falseval, trueval = onebitmap[variant_record[1]]
-    bv = BitsVector(@view(variant_record[2:2 + n_bytes - 1]), 1, n_samples)
+    bv = BitsVector(pointer(variant_record, 2), 1, n_samples)
     @inbounds for i in 1:n_samples
         buf[i] = bv[i] == 0x01 ? trueval : falseval
     end
