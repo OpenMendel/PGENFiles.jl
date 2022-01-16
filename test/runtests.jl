@@ -64,8 +64,14 @@ end
     @test all(idx .== [5000 * i for i in 1:64] .+ 1)
     PGEN.parse_difflist_sampleids!(idx, idx_incr, dl, 2)
     @test all(idx[1:15] .== [5000 * (64 + i) for i in 1:15] .+ 1) # for idx 65..79
-
     rm("dummy", force=true)
+
+    @test typeof(PGEN.empty_difflist(2)) == 
+        PGEN.DiffList{Base.ReinterpretArray{UInt16, 1, UInt8, 
+        SubArray{UInt8, 1, Vector{UInt8}, Tuple{UnitRange{UInt64}}, true}, false}, 
+        SubArray{UInt8, 1, Vector{UInt8}, Tuple{UnitRange{UInt64}}, true}, 
+        PGEN.BitsVector{SubArray{UInt8, 1, Vector{UInt8}, Tuple{UnitRange{UInt64}}, true}}, 
+        SubArray{UInt8, 1, Vector{UInt8}, Tuple{UnitRange{UInt64}}, true}}
 end
 
 @testset "dosage" begin

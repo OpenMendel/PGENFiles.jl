@@ -25,7 +25,7 @@ struct Header{VTT,VLT,ACT,PRFT}
     most_recent_non_ld::Dict{UInt, Variant}
 end
 
-struct Pgen{ST}
+struct Pgen{ST, DLT}
     io::IOStream
     data::Union{Nothing, Vector{UInt8}}
     header::Header

@@ -48,7 +48,8 @@ function alt_allele_dosage!(buf::AbstractVector{T}, genobuf::AbstractVector{UInt
         return buf, variant_record, offset
     elseif v.record_type & 0x20 !== 0 && v.record_type & 0x40 == 0 
         # track 3 is a difflist
-        dl, offset = parse_difflist(variant_record, offset, p.header.bytes_per_sample_id, false)
+        dl, offset = parse_difflist!(p.difflist_cache, variant_record, offset, 
+            p.header.bytes_per_sample_id, false)
         offset = _get_difflist_dosage!(buf, p, dl, variant_record, offset)
     elseif v.record_type & 0x20 == 0 && v.record_type & 0x40 != 0 
         # track 3 does not exist, 0xffff is missing value in track 4
@@ -56,7 +57,7 @@ function alt_allele_dosage!(buf::AbstractVector{T}, genobuf::AbstractVector{UInt
         dosage_unit = T == Float32 ? dosage_unit_Float32 : dosage_unit_Float64
         for i in 1:n_samples
             d = dosages[i]
-            buf[i] = d == 0xffff ? NaN : d * dosage_unit
+            buf[i] = d == 0xffff ? T(NaN) : d * dosage_unit
         end
         offset += 2 * n_samples
     else # track 3 is a bitarray for dosage existence in track 4. 
@@ -185,8 +186,8 @@ function _get_difflist_dosage!(buf::Vector{T}, p::Pgen, dl::DiffList,
     dosage_unit = T == Float32 ? dosage_unit_Float32 : dosage_unit_Float64
     dosages = reinterpret(UInt16, @view(variant_record[offset + 1 : offset + 2 * dl.len]))
     for gid in 1:ngroups
-        parse_difflist_sampleids!(p.difflist_cache, p.difflist_cache_incr, dl, gid)
-        for (idx, sampleid) in enumerate(p.difflist_cache)
+        parse_difflist_sampleids!(p.difflist_cache_idx, p.difflist_cache_incr, dl, gid)
+        for (idx, sampleid) in enumerate(p.difflist_cache_idx)
             totalidx = 64 * (gid - 1) + idx
             if totalidx > dl.len
                 break
