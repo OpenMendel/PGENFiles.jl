@@ -16,7 +16,7 @@ Computes unphased biallelic dosage of ALT allele.
 
 Returns: 
 - `buf`
-- `genobuf`
+- `genobuf` 
 - `offset`: end of dosage record on the current variant record track.
 """
 function alt_allele_dosage!(buf::AbstractVector{T}, genobuf::AbstractVector{UInt8}, 

@@ -78,4 +78,4 @@ mutable struct DiffList{V,W,X,Y}
     has_genotypes::Bool
     genotypes::X # Union{BitsVector{X}, Nothing}
     sample_id_increments::Base.RefValue{Y}
-end
+end 

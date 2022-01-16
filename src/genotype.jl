@@ -123,4 +123,4 @@ function _get_difflist_genotypes!(buf::Vector{UInt8}, p::Pgen, dl::DiffList)
             buf[sampleid] = dl.genotypes[totalidx]
         end
     end
-end
+end 

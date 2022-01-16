@@ -8,7 +8,7 @@ function parse_difflist(data::AbstractVector{UInt8},
     bytes_per_sample_id::Integer,
     has_genotype::Bool)
     # length
-    len, offset = decode_single(data; offset=offset)
+    len, offset = decode_single(data; offset=offset) 
     # length-zero list
     if len == 0
         return DiffList{Nothing, Nothing, Nothing, Nothing}(
