@@ -25,16 +25,13 @@ struct Header{VTT,VLT,ACT,PRFT}
     most_recent_non_ld::Dict{UInt, Variant}
 end
 
-struct Pgen{ST}
+struct Pgen{ST, DLT}
     io::IOStream
     data::Union{Nothing, Vector{UInt8}}
     header::Header
     variant_record_cache::Union{Nothing, Vector{UInt8}} # used only with no_mmap
-    genotypes_prev::Vector{UInt8} # for LD-compressed genotypes
-    genotypes_cache::Vector{UInt8} # 0x00, 0x01, or 0x02. Byte-aligned for performance.
-    genotypes_raw_cache::Vector{UInt8}
-    dosage_cache::Vector{Float32} # Dosage values are represented by 16-bit numbers, Float32 is enough. 
-    difflist_cache::Vector{ST} # length-64 vector for 64 Sample IDs.
+    difflist_cache::DLT
+    difflist_cache_idx::Vector{ST} # length-64 vector for 64 Sample IDs.
     difflist_cache_incr::Vector{UInt32}
 end
 
@@ -57,16 +54,12 @@ function Pgen(filename::String; no_mmap::Bool=false)
     else
         variant_record_cache = Vector{UInt8}(undef, maximum(header.variant_lengths))
     end
-    genotypes_prev = Vector{UInt8}(undef, header.n_samples)
-    genotypes_cache = Vector{UInt8}(undef, header.n_samples)
-    genotypes_raw_cache = Vector{UInt8}(undef, (header.n_samples + 3) >> 2) 
-    dosage_cache = Vector{Float32}(undef, header.n_samples)
-    difflist_cache = Vector{ST}(undef, 64)
+    difflist_cache = empty_difflist(header.bytes_per_sample_id)
+    difflist_cache_idx = Vector{ST}(undef, 64)
     difflist_cache_incr = Vector{UInt32}(undef, 64)
     difflist_cache_incr[1] = 0
-    Pgen{ST}(io, data, header, variant_record_cache, genotypes_prev, genotypes_cache, 
-    genotypes_raw_cache,
-    dosage_cache, difflist_cache, difflist_cache_incr)
+    Pgen{ST, typeof(difflist_cache)}(io, data, header, variant_record_cache,
+        difflist_cache, difflist_cache_idx, difflist_cache_incr)
 end
 
 @inline n_variants(p::Pgen) = p.header.n_variants

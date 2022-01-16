@@ -48,7 +48,8 @@ function alt_allele_dosage!(buf::AbstractVector{T}, genobuf::AbstractVector{UInt
         return buf, variant_record, offset
     elseif v.record_type & 0x20 !== 0 && v.record_type & 0x40 == 0 
         # track 3 is a difflist
-        dl, offset = parse_difflist(variant_record, offset, p.header.bytes_per_sample_id, false)
+        dl, offset = parse_difflist!(p.difflist_cache, variant_record, offset, 
+            p.header.bytes_per_sample_id, false)
         offset = _get_difflist_dosage!(buf, p, dl, variant_record, offset)
     elseif v.record_type & 0x20 == 0 && v.record_type & 0x40 != 0 
         # track 3 does not exist, 0xffff is missing value in track 4

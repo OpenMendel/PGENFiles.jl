@@ -64,8 +64,14 @@ end
     @test all(idx .== [5000 * i for i in 1:64] .+ 1)
     PGEN.parse_difflist_sampleids!(idx, idx_incr, dl, 2)
     @test all(idx[1:15] .== [5000 * (64 + i) for i in 1:15] .+ 1) # for idx 65..79
-
     rm("dummy", force=true)
+
+    @test typeof(PGEN.empty_difflist(2)) == 
+        PGEN.DiffList{Base.ReinterpretArray{UInt16, 1, UInt8, 
+        SubArray{UInt8, 1, Vector{UInt8}, Tuple{UnitRange{UInt64}}, true}, false}, 
+        SubArray{UInt8, 1, Vector{UInt8}, Tuple{UnitRange{UInt64}}, true}, 
+        PGEN.BitsVector{SubArray{UInt8, 1, Vector{UInt8}, Tuple{UnitRange{UInt64}}, true}}, 
+        SubArray{UInt8, 1, Vector{UInt8}, Tuple{UnitRange{UInt64}}, true}}
 end
 
 @testset "dosage" begin
@@ -78,6 +84,7 @@ end
     g_pgen_ld = similar(g_pgen)
     d_pgen = Array{Float64}(undef, p.header.n_samples)
     for (v_bgen, v_pgen) in zip(BGEN.iterator(b), PGEN.iterator(p)) # 
+        println(string(v_pgen.record_type, base=16))
         d_bgen = BGEN.ref_allele_dosage!(b, v_bgen)
         PGEN.alt_allele_dosage!(d_pgen, g_pgen, p, v_pgen)      
         @test all(isapprox.(d_bgen, d_pgen; atol=5e-5, nans=true))

@@ -100,13 +100,15 @@ function _get_genotypes_1bit!(buf::Vector{UInt8}, p::Pgen, variant_record::Abstr
     @inbounds for i in 1:n_samples
         buf[i] = bv[i] == 0x01 ? trueval : falseval
     end
-    dl, offset = parse_difflist(variant_record, UInt(n_bytes + 1), p.header.bytes_per_sample_id, true)
+    dl, offset = parse_difflist!(p.difflist_cache, variant_record, UInt(n_bytes + 1), 
+        p.header.bytes_per_sample_id, true)
     _get_difflist_genotypes!(buf, p, dl)
     offset
 end
 
 function _get_genotypes_difflist!(buf::Vector{UInt8}, p::Pgen, variant_record::AbstractVector{UInt8})
-    dl, offset = parse_difflist(variant_record, zero(UInt), p.header.bytes_per_sample_id, true)
+    dl, offset = parse_difflist!(p.difflist_cache, variant_record, zero(UInt), 
+        p.header.bytes_per_sample_id, true)
     _get_difflist_genotypes!(buf, p, dl)
     offset
 end
@@ -114,8 +116,8 @@ end
 function _get_difflist_genotypes!(buf::Vector{UInt8}, p::Pgen, dl::DiffList)
     ngroups = (dl.len + 63) ÷ 64
     for gid in 1:ngroups
-        parse_difflist_sampleids!(p.difflist_cache, p.difflist_cache_incr, dl, gid)
-        for (idx, sampleid) in enumerate(p.difflist_cache)
+        parse_difflist_sampleids!(p.difflist_cache_idx, p.difflist_cache_incr, dl, gid)
+        for (idx, sampleid) in enumerate(p.difflist_cache_idx)
             totalidx = 64 * (gid - 1) + idx
             if totalidx > dl.len
                 break

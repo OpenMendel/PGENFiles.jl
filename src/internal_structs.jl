@@ -3,7 +3,7 @@
 
 Packed vector of 1, 2, or 4-bit entries. 
 """
-struct BitsVector{V} <: AbstractVector{UInt8}
+mutable struct BitsVector{V} <: AbstractVector{UInt8}
     data::Base.RefValue{V}
     bits_per_element::UInt8
     size::UInt
@@ -76,6 +76,6 @@ mutable struct DiffList{V,W,X,Y}
     sample_id_bases::Base.RefValue{V}
     last_component_sizes::Base.RefValue{W}
     has_genotypes::Bool
-    genotypes::X # Union{BitsVector{X}, Nothing}
+    genotypes::Union{Nothing, X} # Union{BitsVector{X}, Nothing}
     sample_id_increments::Base.RefValue{Y}
 end
