@@ -2,13 +2,13 @@
     decode_single(input::AbstractVector{UInt8}; offset=zero(UInt))
 Decode a single value of ULEB128 from `input`, starting with `offset + 1`-th byte.
 """
-@inline function decode_single(input::AbstractVector{UInt8}; 
+@inline function decode_single(input::Ptr{UInt8}; 
     offset::UInt=zero(UInt)
     )
     output = zero(UInt32)
     shift = 0x00
     for j in 1:5
-        byte = input[offset + j]
+        byte = unsafe_load(input, offset + j)#input[offset + j]
         output |= (UInt32(byte & 0x7f) << shift)
         if (byte & 0x80 == 0) 
             offset += j
@@ -26,8 +26,8 @@ end
 
 Decode `count` values of ULEB128 from `input`, starting with `offset + 1`-th byte.
 """
-function decode_multiple!(output::AbstractVector{UInt32}, 
-    input::AbstractVector{UInt8};
+function decode_multiple!(output::Ptr{UInt32}, 
+    input::Ptr{UInt8};
     count::Integer = length(output), 
     offset::UInt = zero(UInt)
     )
@@ -35,7 +35,7 @@ function decode_multiple!(output::AbstractVector{UInt32},
         o = zero(UInt32)
         shift = 0x00
         for j in 1:5
-            byte = input[offset + j]
+            byte = unsafe_load(input, offset + j) #input[offset + j]
             o |= (UInt32(byte & 0x7f) << shift)
             if (byte & 0x80 == 0)
                 offset += j 
@@ -44,7 +44,7 @@ function decode_multiple!(output::AbstractVector{UInt32},
             @assert j < 5 "incorrect encoding of a ULEB128 number"
             shift += 0x07
         end
-        output[i] = o
+        unsafe_store!(output, o, i) # output[i] = o
     end
     return output, offset
 end

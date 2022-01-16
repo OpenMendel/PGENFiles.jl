@@ -3,15 +3,10 @@
 
 Packed vector of 1, 2, or 4-bit entries. 
 """
-struct BitsVector{V} <: AbstractVector{UInt8}
-    data::Base.RefValue{V}
+struct BitsVector <: AbstractVector{UInt8}
+    data::Ptr{UInt8}
     bits_per_element::UInt8
     size::UInt
-end
-
-function BitsVector(data::AbstractVector{UInt8}, bits_per_element, size)
-    V = typeof(data)
-    BitsVector{V}(Ref(data), bits_per_element, size)
 end
 
 """
@@ -46,7 +41,7 @@ end
     elements_per_byte = 8 ÷ x.bits_per_element
     byte_index = (i - 1) ÷ elements_per_byte + 1
     in_byte_index = (i - 1) % elements_per_byte
-    byte = x.data[][byte_index]
+    byte = unsafe_load(x.data, byte_index)# x.data[][byte_index]
     (byte >> (x.bits_per_element * in_byte_index)) & mask_map[x.bits_per_element]
 end
 
@@ -71,11 +66,11 @@ end
 
 Data structure for difflists.
 """
-mutable struct DiffList{V,W,X,Y}
+mutable struct DiffList{SIBT,GT<:Union{Nothing,BitsVector}}
     len::UInt32
-    sample_id_bases::Base.RefValue{V}
-    last_component_sizes::Base.RefValue{W}
+    sample_id_bases::Ptr{SIBT}
+    last_component_sizes::Ptr{UInt8}
     has_genotypes::Bool
-    genotypes::X # Union{BitsVector{X}, Nothing}
-    sample_id_increments::Base.RefValue{Y}
+    genotypes::GT
+    sample_id_increments::Ptr{UInt8}
 end
