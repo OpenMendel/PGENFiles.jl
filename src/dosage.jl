@@ -57,7 +57,7 @@ function alt_allele_dosage!(buf::AbstractVector{T}, genobuf::AbstractVector{UInt
         dosage_unit = T == Float32 ? dosage_unit_Float32 : dosage_unit_Float64
         for i in 1:n_samples
             d = dosages[i]
-            buf[i] = d == 0xffff ? NaN : d * dosage_unit
+            buf[i] = d == 0xffff ? T(NaN) : d * dosage_unit
         end
         offset += 2 * n_samples
     else # track 3 is a bitarray for dosage existence in track 4. 

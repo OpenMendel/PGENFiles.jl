@@ -84,7 +84,6 @@ end
     g_pgen_ld = similar(g_pgen)
     d_pgen = Array{Float64}(undef, p.header.n_samples)
     for (v_bgen, v_pgen) in zip(BGEN.iterator(b), PGEN.iterator(p)) # 
-        println(string(v_pgen.record_type, base=16))
         d_bgen = BGEN.ref_allele_dosage!(b, v_bgen)
         PGEN.alt_allele_dosage!(d_pgen, g_pgen, p, v_pgen)      
         @test all(isapprox.(d_bgen, d_pgen; atol=5e-5, nans=true))
