@@ -1,4 +1,4 @@
-module PGEN
+module PGENFiles
 using BitIntegers
 import Mmap: mmap
 import Base: unsafe_load
@@ -11,6 +11,13 @@ const variant_type_lengths = Dict(
 )
 const bytes_to_UInt = Dict(0x01 => UInt8, 0x02 => UInt16, 0x03 => UInt24, 0x04 => UInt32, 0x08 => UInt64)
 const mask_map = [0x01, 0x03, 0x00, 0x0f, 0x00, 0x00, 0x00, 0xff]
+
+@inline function Base.unsafe_load(p::Ptr{UInt24}, i::Int=1)
+    p_UInt8 = reinterpret(Ptr{UInt8}, p)
+    p_target = p_UInt8 + (i - 1) * 3
+    a = unsafe_wrap(Array{UInt8}, p_target, (3,))
+    reinterpret(UInt24, a)[1]
+end
 
 @inline ceil_int(x::Integer, y::Integer) = (x ÷ y) + (x % y != 0)
 include("uleb128.jl")
