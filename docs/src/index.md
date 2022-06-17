@@ -1,4 +1,4 @@
-# PGEN.jl
+# PGENFiles.jl
 
 Routines for reading compressed storage of genotyped or imputed markers
 
@@ -19,7 +19,7 @@ https://github.com/JuliaLang/julia repository.
 This package is registered in the default Julia package registry, and can be installed through standard package installation procedure: e.g., running the following code in Julia REPL.
 ```julia
 using Pkg
-pkg"add https://github.com/OpenMendel/PGEN.jl"
+pkg"add https://github.com/OpenMendel/PGENFiles.jl"
 ```
 
 
@@ -46,8 +46,8 @@ The type `Pgen` is the fundamental type for .pgen-formatted files. It can be cre
 
 
 ```julia
-using PGEN
-p = Pgen(PGEN.datadir("bgen_example.16bits.pgen")) ;
+using PGENFiles
+p = Pgen(PGENFiles.datadir("bgen_example.16bits.pgen")) ;
 ```
 
 This example file is a PGEN file converted from a BGEN file.

@@ -1,19 +1,19 @@
-using Documenter, PGEN
+using Documenter, PGENFiles
 
 makedocs(
     format = Documenter.HTML(),
-    sitename = "PGEN.jl",
+    sitename = "PGENFiles.jl",
     authors = "Seyoon Ko",
     clean = true,
     debug = true,
     pages = [
-        "PGEN.jl Tutorial" => "index.md",
+        "PGENFiles.jl Tutorial" => "index.md",
         "PGEN format description" => "PGEN_description.md"
     ]
 )
 
 deploydocs(
-    repo   = "github.com/OpenMendel/PGEN.jl.git",
+    repo   = "github.com/OpenMendel/PGENFiles.jl.git",
     target = "build",
     deps   = nothing,
     make   = nothing,
