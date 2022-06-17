@@ -56,8 +56,8 @@ end
     @test all(dl.genotypes .== 0)
     @test dl.has_genotypes
     @test unsafe_load(dl.last_component_sizes, 1) == 0x3f
-    @test unsafe_load(dl.sample_id_bases, 1) == 5000
-    @test unsafe_load(dl.sample_id_bases, 2) == 325000
+    @test dl.sample_id_bases[1] == 5000
+    @test dl.sample_id_bases[2] == 325000
     #@test length(dl.sample_id_increments[]) == 154
     idx = Vector{UInt32}(undef, 64)
     idx_incr = Vector{UInt32}(undef, 64)
