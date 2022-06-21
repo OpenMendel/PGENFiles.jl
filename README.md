@@ -1,6 +1,6 @@
 # PGENFiles.jl
-[![](https://img.shields.io/badge/docs-latest-blue.svg)](https://OpenMendel.github.io/PGENFiles.jl/dev)
-<!--[![](https://img.shields.io/badge/docs-stable-blue.svg)](https://OpenMendel.github.io/PGENFiles.jl/stable)-->
+[![](https://img.shields.io/badge/docs-dev-blue.svg)](https://OpenMendel.github.io/PGENFiles.jl/dev)
+[![](https://img.shields.io/badge/docs-stable-blue.svg)](https://OpenMendel.github.io/PGENFiles.jl/stable)
 [![codecov](https://codecov.io/gh/OpenMendel/PGENFiles.jl/branch/main/graph/badge.svg?token=W28QPREGC7)](https://codecov.io/gh/OpenMendel/PGENFiles.jl)
 [![build Actions Status](https://github.com/OpenMendel/PGENFiles.jl/workflows/CI/badge.svg)](https://github.com/OpenMendel/PGENFiles.jl/actions)
 
@@ -19,7 +19,7 @@ https://github.com/JuliaLang/julia repository.
 This package is registered in the default Julia package registry, and can be installed through standard package installation procedure: e.g., running the following code in Julia REPL.
 ```julia
 using Pkg
-pkg"add https://github.com/OpenMendel/PGENFiles.jl"
+pkg"add PGENFiles"
 ```
 
 ## Citation
