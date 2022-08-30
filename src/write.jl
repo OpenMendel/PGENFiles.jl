@@ -56,6 +56,24 @@ end
 # n_samples = 1092
 # n_variants = 39728178
 
+function write_variant_record(io, xi::AbstractVector) # xi is a row of x
+    N = length(xi)
+    Nbytes = N % 8
+    Nbytes == 0 || error("Todo: currently assumes number of samples are multiples of 8")
+    # track #3, assumes all samples have dosages
+    for i in 1:Nbytes
+        write(io, 0xff) # 0xff is UInt8 of 11111111
+    end
+    # track #4
+    for xij in xi
+        write(io, dosage_to_uint16(xij))
+    end
+end
+
+function dosage_to_uint16(xij::AbstractFloat, ploidy::Int=2)
+    return bytes(Int(xij/ploidy * 2^15))
+end
+
 function write_pvar(pvar_filename)
     # todo
 end
@@ -88,7 +106,7 @@ in big endian order by default.
 # Source
 https://github.com/roshii/BitConverter.jl/blob/master/src/BitConverter.jl
 """
-function bytes(x::Integer; len::Integer=0, little_endian::Bool=false)
+function bytes(x::Integer; len::Integer=0, little_endian::Bool=true)
     result = reinterpret(UInt8, [hton(x)])
     i = findfirst(x -> x != 0x00, result)
     if len != 0
