@@ -52,26 +52,24 @@ function write_PGEN(
     write_pvar(pvar_filneame)
 end
 
-# using PGENFiles
-# n_samples = 1092
-# n_variants = 39728178
-
-function write_variant_record(io, xi::AbstractVector) # xi is a row of x
+function write_variant_record(io, xi::AbstractVector) # xi is a column of x
     N = length(xi)
-    Nbytes = N % 8
-    Nbytes == 0 || error("Todo: currently assumes number of samples are multiples of 8")
     # track #3, assumes all samples have dosages
-    for i in 1:Nbytes
-        write(io, 0xff) # 0xff is UInt8 of 11111111
+    bytes_written = 0
+    for i in 1:div(N, 8)
+        bytes_written += write(io, 0xff) # 0xff is UInt8 of 11111111
     end
+    leftover = N % 8
+    bytes_written += write(io, bitstring2byte("1"^leftover * "0"^(8 - leftover)))
     # track #4
     for xij in xi
-        write(io, dosage_to_uint16(xij))
+        bytes_written += write(io, dosage_to_uint16(xij)) # 2 bytes per entry
     end
+    return bytes_written
 end
 
 function dosage_to_uint16(xij::AbstractFloat, ploidy::Int=2)
-    return bytes(Int(xij/ploidy * 2^15))
+    return bytes(round(Int, xij/ploidy * 2^15), len=2)
 end
 
 function write_pvar(pvar_filename)
@@ -117,4 +115,16 @@ function bytes(x::Integer; len::Integer=0, little_endian::Bool=true)
         reverse!(result)
     end
     return result
+end
+
+"""
+    bitstring2byte(s)
+
+Parse a 8-digit bitstring to an UInt8.
+
+e.g. bitstring2byte("01110001") = 0x71
+"""
+function bitstring2byte(s::AbstractString)
+    @assert length(s) == 8
+    return parse(UInt8, s, base=2)
 end
