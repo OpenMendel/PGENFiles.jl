@@ -3,6 +3,61 @@ using Test, BGEN
 const data = PGENFiles.datadir("bgen_example.16bits.pgen")
 @testset "PGENFiles.jl" begin
 
+function convert_gt(t::Type{T}, b::Bgen) where T <: Real
+    n = BGEN.n_samples(b)
+    p = BGEN.n_variants(b)
+
+    # return arrays
+    G = Matrix{t}(undef, n, p)
+    Gchr = Vector{String}(undef, p)
+    Gpos = Vector{Int}(undef, p)
+    GsnpID = [String[] for _ in 1:p] # each variant can have >1 rsid, although we don't presently allow this
+    Gref = Vector{String}(undef, p)
+    Galt = [String[] for _ in 1:p] # each variant can have >1 alt allele, although we don't presently allow this
+
+    # loop over each variant
+    i = 1
+    for v in BGEN.iterator(b; from_bgen_start=true)
+        dose = first_allele_dosage!(b, v; T=t) # this reads REF allele as 1
+        copyto!(@view(G[:, i]), dose)
+        # store chr/pos/snpID/ref/alt info
+        Gchr[i], Gpos[i] = chrom(v), pos(v)
+        push!(GsnpID[i], rsid(v))
+        ref_alt_alleles = alleles(v)
+        length(ref_alt_alleles) > 2 && error("Marker $i of BGEN is not biallelic!")
+        Gref[i] = ref_alt_alleles[1]
+        push!(Galt[i], ref_alt_alleles[2])
+        i += 1
+        clear!(v)
+    end
+
+    return G, b.samples, Gchr, Gpos, GsnpID, Gref, Galt
+end
+
+function convert_gt(t::Type{T}, pfile::Pgen) where T <: Real
+    n = PGENFiles.n_samples(pfile) |> Int
+    p = PGENFiles.n_variants(pfile) |> Int
+
+    # return arrays
+    G = Matrix{t}(undef, n, p)
+
+    # loop over each variant
+    d = Vector{t}(undef, n)
+    g = Vector{UInt8}(undef, n)
+    g_ld = similar(g)
+    for (j, v) in enumerate(PGENFiles.iterator(pfile))
+        alt_allele_dosage!(d, g, pfile, v; genoldbuf=g_ld)
+        v_rt = v.record_type & 0x07
+        if v_rt != 0x02 && v_rt != 0x03 # non-LD-compressed. See Format description.
+            g_ld .= g
+        end
+        # store dosages
+        G[:, j] .= d
+    end
+
+    return G
+end
+
 @testset "Header" begin
     p = PGENFiles.Pgen(data)
     h = p.header
@@ -90,5 +145,57 @@ end
             g_pgen_ld .= g_pgen
         end
     end
+end
+
+@testset "write PGEN" begin    
+    # bitstring2byte function
+    @test bitstring2byte("01110001") == 0x71
+    @test bitstring2byte("11111111") == 0xff
+
+    # bytes function (example at 2.2.6)
+    @test PGENFiles.bytes(99325313, len=8) == [0x81, 0x95, 0xeb, 0x05, 0x00, 0x00, 0x00, 0x00]
+
+    # dosage_to_uint16 function (example at end of 2.3.5)
+    ploidy = 2
+    @test PGENFiles.dosage_to_uint16(0.75, ploidy) == [0x00, 0x30]
+    @test PGENFiles.dosage_to_uint16(1.5, ploidy) == [0x00, 0x60]
+
+    # write_variant_record function (example at end of 2.3.5, modified so all samples have dosages)
+    N = 488377
+    xj = fill(0.75, N)
+    xj[10000] = 1.5
+    open("test_io_file", "w") do io
+        b = PGENFiles.write_variant_record(io, xj)
+    end
+    result = open("test_io_file") do io
+        read(io)
+    end
+    rm("test_io_file", force=true)
+    @test result[1:61047] == fill(0xff, 61047)
+    @test result[61048] == 
+    for i in 1:9999
+        @test result[61049+2(i-1) : 61049+2(i-1)+1] == [0x00, 0x30]
+    end
+    @test result[61049+2(10000-1) : 61049+2(10000-1)+1] == [0x00, 0x60]
+    for i in 10001:N
+        @test result[61049+2(i-1) : 61049+2(i-1)+1] == [0x00, 0x30]
+    end
+
+    # write_variant_record function (test if each block have fixed number of bytes)
+    io = open("test_io_file", "w")
+    n_samples = 800
+    xj = 2rand(n_samples)
+    b = PGENFiles.write_variant_record(io, xi) # b is 1700
+    close(io); rm("test_io_file", force=true);
+    @test 2^16 * b == 111411200
+
+    # write_PGEN function
+    bfile = Bgen(PGENFiles.datadir("example.16bits.bgen"))
+    bgenG, nsamples, Gchr, Gpos, GsnpID, Gref, Galt = convert_gt(Float64, bfile)
+    # pgenG = convert_gt(Float64, PGENFiles.Pgen(data))
+    write_PGEN("test_pgen_write.pgen", bgenG)
+    pgenG = convert_gt(Float64, PGENFiles.Pgen("test_pgen_write.pgen"))
+    @test all(isapprox.(pgenG, bgenG; atol=5e-5, nans=true))
+    rm("test_pgen_write.pgen", force=true)
 end
 end
