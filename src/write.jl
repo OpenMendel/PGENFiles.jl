@@ -9,8 +9,8 @@ PGEN file in a single sequential pass.
 # Inputs
 + `pgen_filename`: Output filename of PGEN file
 + `x`: Numeric matrix, each row is a sample and each column is a SNPs. It is assumed
-    `x[i, j] ∈ [0, 2]` and missing values are represented using Julia's `Missing` type
-    i.e. `x[i,j] === missing`.
+    `x[i, j] ∈ [0, 2]` and missing values are represented either with
+    `x[i,j] === missing` or `x[i,j] === NaN`.
 + `sampleID`: Vector storing each sample's ID
 + `variantID`: Vector storing each variant's ID
 
@@ -32,23 +32,24 @@ function write_PGEN(
     )
     n_samples, n_variants = size(x)
     n_blocks = PGENFiles.ceil_int(n_variants, 2^16) #Int(ceil(n_variants / 2 ^ 16))
+    bytes_written = 0
     # main PGEN file
     open(pgen_filename, "w") do io
         #
         # Construct header
         #
         # magic number
-        write(io, 0x6c, 0x1b)
+        bytes_written += write(io, 0x6c, 0x1b)
         # storage mode
-        write(io, 0x10) # 2 bytes so far (note: 0-based indexing according to manual) 
+        bytes_written += write(io, 0x10) # 2 bytes so far (note: 0-based indexing according to manual) 
         # data dimension
-        write(io, UInt32(n_variants)) # 6 bytes
-        write(io, UInt32(n_samples)) # 10 bytes
+        bytes_written += write(io, UInt32(n_variants)) # 6 bytes
+        bytes_written += write(io, UInt32(n_samples)) # 10 bytes
         # 11th byte indicating how data is stored
         bits_per_record_type = 8 # need 8 to encode dosages
         bytes_per_record_length = 2 # each variant stored as UInt16 (i.e. requiring 2 bytes)
         twelfth_byte_bits =  "10" * "00" * "0101" # all ref alleles provisional; no allele counts; 8 bits per record type, 2 bytes per record length; 
-        write(io, bitstring2byte(twelfth_byte_bits))
+        bytes_written += write(io, bitstring2byte(twelfth_byte_bits))
         # some constants for computing variant block offsets (i.e. start position for each block)
         variant_offset = 12 + 8n_blocks
         variant_type_offset = Int(2^16 / (8 / bits_per_record_type))
@@ -62,7 +63,7 @@ function write_PGEN(
         for b in 1:n_blocks
             block_offset = variant_offset + (b - 1) * bytes_per_variant_record
             for x in int2bytes(block_offset, len=8)
-                write(io, x)
+                bytes_written += write(io, x)
             end
         end
         # store variant record types and variant record lengths for each block.
@@ -72,23 +73,34 @@ function write_PGEN(
         #   "0" (no phased hetero hard calls) +
         #   "01" (dosage exists for all samples, value of 65535 represents missing) +
         #   "0" (explicit phased-dosages abscent)
-        variant_record_type_byte = bitstring2byte("00000010")
+        variant_record_type = bitstring2byte("00000010")
         variant_record_byte_length = int2bytes(bytes_per_record_length * n_samples, len=2)
-        for b in 1:n_blocks
-            for snp in 1:n_variants
-                write(io, variant_record_type_byte)
-                write(io, variant_record_byte_length)
+        for b in 1:(n_blocks - 1)
+            for snp in 1:2^16
+                bytes_written += write(io, variant_record_type)
             end
+            for snp in 1:2^16
+                bytes_written += write(io, variant_record_byte_length)
+            end
+        end
+        # last block 
+        remainders = n_variants % 2^16
+        for snp in 1:remainders
+            bytes_written += write(io, variant_record_type)
+        end
+        for snp in 1:remainders
+            bytes_written += write(io, variant_record_byte_length)
         end
         #
         # Construct variant records 
         #
         for j in 1:n_variants
-            write_variant_record(io, @view(x[:, j]))
+            bytes_written += write_variant_record(io, @view(x[:, j]))
         end
     end
     # handle psam file
     # handle pvar file
+    return bytes_written
 end
 
 function write_variant_record(io, xj::AbstractVector) # xj is the jth column of x
@@ -102,7 +114,11 @@ function write_variant_record(io, xj::AbstractVector) # xj is the jth column of 
 end
 
 function dosage_to_uint16(xij::AbstractFloat, ploidy::Int=2)
-    return int2bytes(round(Int, xij/ploidy * 2^15), len=2)
+    if isnan(xij)
+        return int2bytes(65535, len=2)
+    else
+        return int2bytes(round(Int, xij/ploidy * 2^15), len=2)
+    end
 end
 function dosage_to_uint16(::Missing, args...)
     return int2bytes(65535, len=2)
