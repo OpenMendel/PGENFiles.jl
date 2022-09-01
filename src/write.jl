@@ -68,13 +68,13 @@ function write_PGEN(
         end
         # store variant record types and variant record lengths for each block.
         # Here record type is:
-        #   "000" (no compression) +
-        #   "0" (no multi allelic hard calls) +
+        #   "0" (explicit phased-dosages abscent) + 
+        #   "10" (dosage exists for all samples, value of 65535 represents missing) +
         #   "0" (no phased hetero hard calls) +
-        #   "01" (dosage exists for all samples, value of 65535 represents missing) +
-        #   "0" (explicit phased-dosages abscent)
-        variant_record_type = bitstring2byte("00000010")
-        variant_record_byte_length = int2bytes(bytes_per_record_length * n_samples, len=2)
+        #   "0" (no multi allelic hard calls) +
+        #   "000" (no compression)
+        variant_record_type = bitstring2byte("01000000")
+        variant_record_byte_length = int2bytes(bytes_per_record_length * n_samples, len=2) # bytes_per_record_length = 2; n_samples = 500; this gives [0xe8, 0x03]
         for b in 1:(n_blocks - 1)
             for snp in 1:2^16
                 bytes_written += write(io, variant_record_type)
