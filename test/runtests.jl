@@ -135,7 +135,7 @@ end
     g_pgen_ld = similar(g_pgen)
     d_pgen = Array{Float64}(undef, p.header.n_samples)
     for (v_bgen, v_pgen) in zip(BGEN.iterator(b), PGENFiles.iterator(p)) # 
-        d_bgen = BGEN.ref_allele_dosage!(b, v_bgen)
+        d_bgen = BGEN.first_allele_dosage!(b, v_bgen)
         PGENFiles.alt_allele_dosage!(d_pgen, g_pgen, p, v_pgen)      
         @test all(isapprox.(d_bgen, d_pgen; atol=5e-5, nans=true))
         PGENFiles.alt_allele_dosage!(d_pgen, g_pgen, p, v_pgen; genoldbuf=g_pgen_ld)  
@@ -149,45 +149,16 @@ end
 
 @testset "write PGEN" begin    
     # bitstring2byte function
-    @test bitstring2byte("01110001") == 0x71
-    @test bitstring2byte("11111111") == 0xff
+    @test PGENFiles.bitstring2byte("01110001") == 0x71
+    @test PGENFiles.bitstring2byte("11111111") == 0xff
 
     # bytes function (example at 2.2.6)
-    @test PGENFiles.bytes(99325313, len=8) == [0x81, 0x95, 0xeb, 0x05, 0x00, 0x00, 0x00, 0x00]
+    @test PGENFiles.int2bytes(99325313, len=8) == [0x81, 0x95, 0xeb, 0x05, 0x00, 0x00, 0x00, 0x00]
 
     # dosage_to_uint16 function (example at end of 2.3.5)
     ploidy = 2
     @test PGENFiles.dosage_to_uint16(0.75, ploidy) == [0x00, 0x30]
     @test PGENFiles.dosage_to_uint16(1.5, ploidy) == [0x00, 0x60]
-
-    # write_variant_record function (example at end of 2.3.5, modified so all samples have dosages)
-    N = 488377
-    xj = fill(0.75, N)
-    xj[10000] = 1.5
-    open("test_io_file", "w") do io
-        b = PGENFiles.write_variant_record(io, xj)
-    end
-    result = open("test_io_file") do io
-        read(io)
-    end
-    rm("test_io_file", force=true)
-    @test result[1:61047] == fill(0xff, 61047)
-    @test result[61048] == 
-    for i in 1:9999
-        @test result[61049+2(i-1) : 61049+2(i-1)+1] == [0x00, 0x30]
-    end
-    @test result[61049+2(10000-1) : 61049+2(10000-1)+1] == [0x00, 0x60]
-    for i in 10001:N
-        @test result[61049+2(i-1) : 61049+2(i-1)+1] == [0x00, 0x30]
-    end
-
-    # write_variant_record function (test if each block have fixed number of bytes)
-    io = open("test_io_file", "w")
-    n_samples = 800
-    xj = 2rand(n_samples)
-    b = PGENFiles.write_variant_record(io, xi) # b is 1700
-    close(io); rm("test_io_file", force=true);
-    @test 2^16 * b == 111411200
 
     # write_PGEN function
     bfile = Bgen(PGENFiles.datadir("example.16bits.bgen"))
