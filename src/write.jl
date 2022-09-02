@@ -59,7 +59,8 @@ function write_PGEN(
         variant_offset += Int(last_block_variants / (8 / bits_per_record_type)) + 
             last_block_variants * bytes_per_record_length # 99325313 if bits_per_record_type = 4; bytes_per_record_length = 2; n_samples = 1092; n_variants = 39728178
         # store variant offsets for each block, assuming each variant record has fixed width
-        bytes_per_variant_record = 2^16 * bytes_per_record_length * n_samples
+        bytes_per_variant = (bytes_per_record_length * n_samples + ceil(Int, 0.25n_samples))
+        bytes_per_variant_record = 2^16 * bytes_per_variant
         for b in 1:n_blocks
             block_offset = variant_offset + (b - 1) * bytes_per_variant_record
             for x in int2bytes(block_offset, len=8)
@@ -73,8 +74,8 @@ function write_PGEN(
         #   "0" (no phased hetero hard calls) +
         #   "0" (no multi allelic hard calls) +
         #   "000" (no compression)
-        variant_record_type = bitstring2byte("01000000")
-        variant_record_byte_length = int2bytes(bytes_per_record_length * n_samples, len=2) # bytes_per_record_length = 2; n_samples = 500; this gives [0xe8, 0x03]
+        variant_record_type = bitstring2byte("01000000") # 0x40
+        variant_record_byte_length = int2bytes(bytes_per_variant, len=2)
         for b in 1:(n_blocks - 1)
             for snp in 1:2^16
                 bytes_written += write(io, variant_record_type)
@@ -105,8 +106,16 @@ end
 
 function write_variant_record(io, xj::AbstractVector) # xj is the jth column of x
     N = length(xj)
-    # track #4
     bytes_written = 0
+    # main data track (currently assumes all hard-call genotypes are missing)
+    for xij in 1:div(N, 4)
+        bytes_written += write(io, 0xff) # 11 11 11 11
+    end
+    leftover = N % 4
+    if N % 4 > 0
+        bytes_written += write(io, bitstring2byte("0"^(8 - 2leftover) * "1"^2leftover))
+    end
+    # track #4
     for xij in xj
         bytes_written += write(io, dosage_to_uint16(xij)) # 2 bytes per entry
     end
