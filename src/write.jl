@@ -2,17 +2,23 @@
     write_PGEN(pgen_filename, x, sampleID, variantID)
 
 Saves numeric matrix `x` into a PGEN formatted file. We assume `x`
-stores dosage diploid genotype (i.e. `x[i, j] ∈ [0, 2]`). As such, the code 
-below implements a "fixed-width storage mode" which can write a standalone
-PGEN file in a single sequential pass. 
+stores dosage diploid genotype (i.e. `x[i, j] ∈ [0, 2]`). Note all hard-call
+genotype values in the resulting PGEN file are all stored as missing. 
 
 # Inputs
 + `pgen_filename`: Output filename of PGEN file
-+ `x`: Numeric matrix, each row is a sample and each column is a SNPs. It is assumed
-    `x[i, j] ∈ [0, 2]` and missing values are represented either with
-    `x[i,j] === missing` or `x[i,j] === NaN`.
-+ `sampleID`: Vector storing each sample's ID
-+ `variantID`: Vector storing each variant's ID
++ `x`: Numeric matrix, each row is a sample and each column is a SNP. `x[i, j]`
+    is considered missing if `ismissing(x[i,j]) == true` or `isnan(x[i,j]) == true`.
++ `FID`: Vector storing each sample's family ID, defaults to 0
++ `IID`: Vector storing each sample's individual ID, defaults to integer between 1-n
++ `PAT`: Vector storing each sample's father ID, defaults to 0
++ `MAT`: Vector storing each sample's mother ID, defaults to 0
++ `SEX`: Vector storing each sample's sex, defaults to "NA"
++ `CHROM`: Vector storing each variant's chromosome number, defaults to 1
++ `ID`: Vector storing each variant's ID, detaults to snp1, snp2,... etc
++ `POS`: Vector storing each variant's position, defaults to 1, 2, ...
++ `ALT`: Vector storing each variant's alternate alleles, defaults to A
++ `REF`: Vector storing each variant's reference allele, defaults to T
 
 # PGEN format structure
 ----Header-----
@@ -26,15 +32,25 @@ PGEN file in a single sequential pass.
 """
 function write_PGEN(
     pgen_filename::AbstractString, 
-    x::AbstractMatrix,
-    # sampleID::AbstractVector,
-    # variantID::AbstractVector
+    x::AbstractMatrix;
+    # psam values
+    FID::AbstractVector = zeros(Int, size(x, 1)),
+    IID::AbstractVector = collect(1:size(x, 1)),
+    PAT::AbstractVector = zeros(Int, size(x, 1)),
+    MAT::AbstractVector = zeros(Int, size(x, 1)),
+    SEX::AbstractVector = ["NA" for i in 1:size(x, 1)],
+    # pvar values
+    CHROM::AbstractVector = ones(Int, size(x, 2)),
+    ID::AbstractVector = ["snp$i" for i in 1:size(x, 2)],
+    POS::AbstractVector = collect(1:size(x, 2)),
+    ALT::AbstractVector = ["A" for i in 1:size(x, 2)],
+    REF::AbstractVector = ["T" for i in 1:size(x, 2)],
     )
     n_samples, n_variants = size(x)
     n_blocks = PGENFiles.ceil_int(n_variants, 2^16) #Int(ceil(n_variants / 2 ^ 16))
     bytes_written = 0
     # main PGEN file
-    open(pgen_filename, "w") do io
+    open(pgen_filename * ".pgen", "w") do io
         #
         # Construct header
         #
@@ -100,7 +116,19 @@ function write_PGEN(
         end
     end
     # handle psam file
-    # handle pvar file
+    open(pgen_filename * ".psam", "w") do io
+        println(io, "#FID\tIID\tPAT\tMAT\tSEX")
+        for i in 1:n_samples
+            println(io, FID[i], '\t', IID[i], '\t', PAT[i], '\t', MAT[i], '\t', SEX[i])
+        end
+    end
+    # handle pvar file (consider output a zs-compressed pvar file by default)
+    open(pgen_filename * ".pvar", "w") do io
+        println(io, "#CHROM\tID\tPOS\tALT\tREF")
+        for i in 1:n_variants
+            println(io, CHROM[i], '\t', ID[i], '\t', POS[i], '\t', ALT[i], '\t', REF[i])
+        end
+    end
     return bytes_written
 end
 
@@ -112,7 +140,7 @@ function write_variant_record(io, xj::AbstractVector) # xj is the jth column of 
         bytes_written += write(io, 0xff) # 11 11 11 11
     end
     leftover = N % 4
-    if N % 4 > 0
+    if leftover > 0
         bytes_written += write(io, bitstring2byte("0"^(8 - 2leftover) * "1"^2leftover))
     end
     # track #4
