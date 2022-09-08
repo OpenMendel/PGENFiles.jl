@@ -1,6 +1,6 @@
 # PGENFiles.jl
-[![](https://img.shields.io/badge/docs-latest-blue.svg)](https://OpenMendel.github.io/PGENFiles.jl/dev)
-<!--[![](https://img.shields.io/badge/docs-stable-blue.svg)](https://OpenMendel.github.io/PGENFiles.jl/stable)-->
+[![](https://img.shields.io/badge/docs-dev-blue.svg)](https://OpenMendel.github.io/PGENFiles.jl/dev)
+[![](https://img.shields.io/badge/docs-stable-blue.svg)](https://OpenMendel.github.io/PGENFiles.jl/stable)
 [![codecov](https://codecov.io/gh/OpenMendel/PGENFiles.jl/branch/main/graph/badge.svg?token=W28QPREGC7)](https://codecov.io/gh/OpenMendel/PGENFiles.jl)
 [![build Actions Status](https://github.com/OpenMendel/PGENFiles.jl/workflows/CI/badge.svg)](https://github.com/OpenMendel/PGENFiles.jl/actions)
 
@@ -19,15 +19,15 @@ https://github.com/JuliaLang/julia repository.
 This package is registered in the default Julia package registry, and can be installed through standard package installation procedure: e.g., running the following code in Julia REPL.
 ```julia
 using Pkg
-pkg"add https://github.com/OpenMendel/PGENFiles.jl"
+pkg"add PGENFiles"
 ```
 
 ## Citation
 
 If you use [OpenMendel](https://openmendel.github.io) analysis packages in your research, please cite the following reference in the resulting publications:
 
-*OPENMENDEL: a cooperative programming project for statistical genetics. Zhou H, Sinsheimer JS, Bates DM, Chu BB, German CA, Ji SS, Keys KL, Kim J, Ko S, Mosher GD, Papp JC, Sobel EM, Zhai J, Zhou JJ, Lange K. Hum Genet. 2019 Mar 26. doi: 10.1007/s00439-019-02001-z. [Epub ahead of print] PMID: 30915546*
+*Zhou H, Sinsheimer JS, Bates DM, Chu BB, German CA, Ji SS, Keys KL, Kim J, Ko S, Mosher GD, Papp JC, Sobel EM, Zhai J, Zhou JJ, Lange K. OPENMENDEL: a cooperative programming project for statistical genetics. Hum Genet. 2020 Jan;139(1):61-71. doi: 10.1007/s00439-019-02001-z. Epub 2019 Mar 26. PMID: 30915546; PMCID: [PMC6763373](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6763373/).*
 
 ## Acknowledgments
 
-This project is supported by the National Institutes of Health under NIGMS awards R01GM053275 and R25GM103774 and NHGRI award R01HG006139.
+This project has been supported by the National Institutes of Health under awards R01GM053275, R01HG006139, R25GM103774, and 1R25HG011845.
