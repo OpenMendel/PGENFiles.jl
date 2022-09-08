@@ -6,7 +6,7 @@ stores dosage diploid genotype (i.e. `x[i, j] ∈ [0, 2]`). Note all hard-call
 genotype values in the resulting PGEN file are all stored as missing. 
 
 # Inputs
-+ `pgen_filename`: Output filename of PGEN file
++ `pgen_filename`: Output filename of PGEN file (do not include `.pgen/.pvar/.psam`)
 + `x`: Numeric matrix, each row is a sample and each column is a SNP. `x[i, j]`
     is considered missing if `ismissing(x[i,j]) == true` or `isnan(x[i,j]) == true`.
 + `FID`: Vector storing each sample's family ID, defaults to 0
@@ -132,7 +132,7 @@ function write_PGEN(
     return bytes_written
 end
 
-function write_variant_record(io, xj::AbstractVector) # xj is the jth column of x
+function write_variant_record(io, xj::AbstractVector, storage=zeros(Int, 1)) # xj is the jth column of x
     N = length(xj)
     bytes_written = 0
     # main data track (currently assumes all hard-call genotypes are missing)
@@ -145,20 +145,20 @@ function write_variant_record(io, xj::AbstractVector) # xj is the jth column of 
     end
     # track #4
     for xij in xj
-        bytes_written += write(io, dosage_to_uint16(xij)) # 2 bytes per entry
+        bytes_written += write(io, dosage_to_uint16(xij, 2, storage))
     end
     return bytes_written
 end
 
-function dosage_to_uint16(xij::AbstractFloat, ploidy::Int=2)
+function dosage_to_uint16(xij::AbstractFloat, ploidy::Int=2, storage=zeros(Int, 1))
     if isnan(xij)
-        return int2bytes(65535, len=2)
+        return int2bytes(65535, len=2, storage=storage)
     else
-        return int2bytes(round(Int, xij/ploidy * 2^15), len=2)
+        return int2bytes(round(Int, xij/ploidy * 2^15), len=2, storage=storage)
     end
 end
-function dosage_to_uint16(::Missing, args...)
-    return int2bytes(65535, len=2)
+function dosage_to_uint16(::Missing, ploidy, storage)
+    return int2bytes(65535, len=2, storage=storage)
 end
 
 """
@@ -169,8 +169,7 @@ Convert an Integer `x` to a Vector{UInt8}
 Options (not available for `x::BigInt`):
 - `len` to define a minimum Vector lenght in bytes, result will show no leading
 zero by default.
-- set `little_endian` to `true` for a result in little endian byte order, result
-in big endian order by default.
+- set `little_endian` to `true` for a result in little endian byte order.
     julia> int2bytes(32974)
     2-element Array{UInt8,1}:
      0x80
@@ -189,13 +188,14 @@ in big endian order by default.
 # Source
 https://github.com/roshii/BitConverter.jl/blob/master/src/BitConverter.jl
 """
-function int2bytes(x::Integer; len::Integer=0, little_endian::Bool=true)
-    result = reinterpret(UInt8, [hton(x)])
+function int2bytes(x::Integer; len::Integer=0, little_endian::Bool=true, storage=zeros(Int, 1))
+    storage[1] = hton(x)
+    result = reinterpret(UInt8, storage)
     i = findfirst(x -> x != 0x00, result)
     if len != 0
         i = length(result) - len + 1
     end
-    result = result[i:end]
+    result = @view(result[i:end])
     if little_endian
         reverse!(result)
     end
