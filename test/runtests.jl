@@ -167,8 +167,9 @@ end
     write_PGEN("test_pgen_write", bgenG)
     pgenG = convert_gt(Float64, PGENFiles.Pgen("test_pgen_write.pgen"))
     @test all(isapprox.(pgenG, bgenG; atol=5e-5, nans=true))
-    rm("test_pgen_write.pgen", force=true)
-    rm("test_pgen_write.pvar", force=true)
-    rm("test_pgen_write.psam", force=true)
+    # does not work on windows CI
+    # rm("test_pgen_write.pgen", force=true)
+    # rm("test_pgen_write.pvar", force=true)
+    # rm("test_pgen_write.psam", force=true)
 end
 end
