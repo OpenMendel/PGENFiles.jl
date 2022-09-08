@@ -164,9 +164,11 @@ end
     bfile = Bgen(PGENFiles.datadir("example.16bits.bgen"))
     bgenG, nsamples, Gchr, Gpos, GsnpID, Gref, Galt = convert_gt(Float64, bfile)
     # pgenG = convert_gt(Float64, PGENFiles.Pgen(data))
-    write_PGEN("test_pgen_write.pgen", bgenG)
+    write_PGEN("test_pgen_write", bgenG)
     pgenG = convert_gt(Float64, PGENFiles.Pgen("test_pgen_write.pgen"))
     @test all(isapprox.(pgenG, bgenG; atol=5e-5, nans=true))
     rm("test_pgen_write.pgen", force=true)
+    rm("test_pgen_write.pvar", force=true)
+    rm("test_pgen_write.psam", force=true)
 end
 end

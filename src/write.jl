@@ -49,23 +49,24 @@ function write_PGEN(
     n_samples, n_variants = size(x)
     n_blocks = PGENFiles.ceil_int(n_variants, 2^16) #Int(ceil(n_variants / 2 ^ 16))
     bytes_written = 0
+    pb = PipeBuffer()
     # main PGEN file
     open(pgen_filename * ".pgen", "w") do io
         #
         # Construct header
         #
         # magic number
-        bytes_written += write(io, 0x6c, 0x1b)
+        bytes_written += write(pb, 0x6c, 0x1b)
         # storage mode
-        bytes_written += write(io, 0x10) # 2 bytes so far (note: 0-based indexing according to manual) 
+        bytes_written += write(pb, 0x10) # 2 bytes so far (note: 0-based indexing according to manual) 
         # data dimension
-        bytes_written += write(io, UInt32(n_variants)) # 6 bytes
-        bytes_written += write(io, UInt32(n_samples)) # 10 bytes
+        bytes_written += write(pb, UInt32(n_variants)) # 6 bytes
+        bytes_written += write(pb, UInt32(n_samples)) # 10 bytes
         # 11th byte indicating how data is stored
         bits_per_record_type = 8 # need 8 to encode dosages
         bytes_per_record_length = 2 # each variant stored as UInt16 (i.e. requiring 2 bytes)
         twelfth_byte_bits =  "10" * "00" * "0101" # all ref alleles provisional; no allele counts; 8 bits per record type, 2 bytes per record length; 
-        bytes_written += write(io, bitstring2byte(twelfth_byte_bits))
+        bytes_written += write(pb, bitstring2byte(twelfth_byte_bits))
         # some constants for computing variant block offsets (i.e. start position for each block)
         variant_offset = 12 + 8n_blocks
         variant_type_offset = Int(2^16 / (8 / bits_per_record_type))
@@ -80,7 +81,7 @@ function write_PGEN(
         for b in 1:n_blocks
             block_offset = variant_offset + (b - 1) * bytes_per_variant_record
             for x in int2bytes(block_offset, len=8)
-                bytes_written += write(io, x)
+                bytes_written += write(pb, x)
             end
         end
         # store variant record types and variant record lengths for each block.
@@ -94,26 +95,30 @@ function write_PGEN(
         variant_record_byte_length = int2bytes(bytes_per_variant, len=2)
         for b in 1:(n_blocks - 1)
             for snp in 1:2^16
-                bytes_written += write(io, variant_record_type)
+                bytes_written += write(pb, variant_record_type)
             end
             for snp in 1:2^16
-                bytes_written += write(io, variant_record_byte_length)
+                bytes_written += write(pb, variant_record_byte_length)
             end
+            bytesavailable(pb) > 1048576 && write(io, take!(pb))
         end
         # last block 
         remainders = n_variants % 2^16
         for snp in 1:remainders
-            bytes_written += write(io, variant_record_type)
+            bytes_written += write(pb, variant_record_type)
         end
         for snp in 1:remainders
-            bytes_written += write(io, variant_record_byte_length)
+            bytes_written += write(pb, variant_record_byte_length)
         end
+        write(io, take!(pb))
         #
         # Construct variant records 
         #
         for j in 1:n_variants
-            bytes_written += write_variant_record(io, @view(x[:, j]))
+            bytes_written += write_variant_record(pb, @view(x[:, j]))
+            bytesavailable(pb) > 1048576 && write(io, take!(pb))
         end
+        write(io, take!(pb))
     end
     # handle psam file
     open(pgen_filename * ".psam", "w") do io
