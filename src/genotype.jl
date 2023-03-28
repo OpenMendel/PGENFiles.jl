@@ -59,6 +59,12 @@ function get_genotypes!(buf::Vector{UInt8}, p::Pgen, v::Variant;
     else
         @error "invalid compression type"
     end
+    if ldbuf !== nothing && !(compression_type == 0x02 || compression_type == 0x03) && v.index < n_variants(p)
+        compression_type_next = p.header.variant_types[v.index + 1] & 0x07
+        if compression_type_next == 0x02 || compression_type_next == 0x03
+            ldbuf .= buf
+        end
+    end
     buf, variant_record, offset
 end
 
