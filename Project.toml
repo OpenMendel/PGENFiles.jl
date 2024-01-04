@@ -12,6 +12,9 @@ Mmap = "a63ad114-7e13-5084-954f-fe012c677804"
 
 [compat]
 BitIntegers = "0.2, 0.3"
+CSV = "0.10"
+DataFrames = "1"
+GeneticVariantBase = "0.1"
 julia = "1.6"
 
 [extras]
