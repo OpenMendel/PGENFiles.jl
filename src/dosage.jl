@@ -11,7 +11,7 @@ Computes unphased biallelic dosage of ALT allele.
 - `buf`: stores dosage values.
 - `genobuf`: stores genotype values.
 - `p`: a `Pgen` object.
-- `v`: a `Variant` object.
+- `v`: a `PgenVariant` object.
 - `genoldbuf`: most recent non-LD-compressed genotypes.
 
 Returns: 
@@ -20,7 +20,7 @@ Returns:
 - `offset`: end of dosage record on the current variant record track.
 """
 function alt_allele_dosage!(buf::AbstractVector{T}, genobuf::AbstractVector{UInt8}, 
-    p::Pgen, v::Variant;
+    p::Pgen, v::PgenVariant;
     genoldbuf::Union{Nothing, Vector{UInt8}}=nothing
     ) where T <: AbstractFloat
     n_samples = p.header.n_samples
@@ -90,7 +90,7 @@ Computes unphased biallelic dosage of REF allele.
 - `buf`: stores dosage values.
 - `genobuf`: stores genotype values.
 - `p`: a `Pgen` object.
-- `v`: a `Variant` object.
+- `v`: a `PgenVariant` object.
 - `genoldbuf`: most recent non-LD-compressed genotypes.
 
 Returns: 
@@ -99,7 +99,7 @@ Returns:
 - `offset`: end of dosage record on the current variant record track.
 """
 function ref_allele_dosage!(buf::AbstractVector{T}, genobuf::AbstractVector{UInt8}, 
-    p::Pgen, v::Variant; 
+    p::Pgen, v::PgenVariant; 
     genoldbuf::Union{Nothing, Vector{UInt8}}=nothing
     ) where T <: AbstractFloat
     _, offset = alt_allele_dosage!(buf, genobuf, p, v; genoldbuf=genoldbuf)
@@ -115,14 +115,14 @@ end
 Computes unphased biallelic dosage of ALT allele. 
 
 - `p`: a `Pgen` object.
-- `v`: a `Variant` object.
+- `v`: a `PgenVariant` object.
 
 Returns: 
 - `buf`: stores dosage values.
 - `genobuf`: stores genotype values.
 - `offset`: end of dosage record on the current variant record track.
 """
-function alt_allele_dosage(p::Pgen, v::Variant)
+function alt_allele_dosage(p::Pgen, v::PgenVariant)
     n_samples = p.header.n_samples
     buf = Vector{Float32}(undef, n_samples)
     genobuf = Vector{UInt8}(undef, n_samples)
@@ -135,14 +135,14 @@ end
 Computes unphased biallelic dosage of REF allele. 
 
 - `p`: a `Pgen` object.
-- `v`: a `Variant` object.
+- `v`: a `PgenVariant` object.
 
 Returns: 
 - `buf`: stores dosage values.
 - `genobuf`: stores genotype values.
 - `offset`: end of dosage record on the current variant record track.
 """
-function ref_allele_dosage(p::Pgen, v::Variant)
+function ref_allele_dosage(p::Pgen, v::PgenVariant)
     n_samples = p.header.n_samples
     buf = Vector{Float32}(undef, n_samples)
     genobuf = Vector{UInt8}(undef, n_samples)
