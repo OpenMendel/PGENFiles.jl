@@ -1,23 +1,21 @@
-abstract type VariantIterator end
+"""
+    PgenVariantIterator(p::Pgen)
+Variant iterator that iterates from the beginning of the Pgen file
+"""
+struct PgenVariantIterator <: VariantIterator
+    p::Pgen
+    v::Variant
+end
 
 function offset_first_variant(x::Pgen)::UInt64
     x.header.variant_block_offsets[1]
 end
 
-@inline function Base.eltype(vi::VariantIterator)
+@inline function Base.eltype(vi::PgenVariantIterator)
     Variant
 end
 
-"""
-    VariantIteratorBase(p::Pgen)
-Variant iterator that iterates from the beginning of the Pgen file
-"""
-struct VariantIteratorBase <: VariantIterator
-    p::Pgen
-    v::Variant
-end
-
-function Base.iterate(vi::VariantIteratorBase,
+function Base.iterate(vi::PgenVariantIterator,
     state=(1, offset_first_variant(vi.p)))
     if state[1] > vi.p.header.n_variants
         return nothing
@@ -32,11 +30,11 @@ function Base.iterate(vi::VariantIteratorBase,
     end
 end
 
-@inline function Base.length(vi::VariantIteratorBase)
+@inline function Base.length(vi::PgenVariantIterator)
     vi.p.header.n_variants
 end
 
-@inline function Base.size(vi::VariantIteratorBase)
+@inline function Base.size(vi::PgenVariantIterator)
     (vi.p.header.n_variants, )
 end
 
@@ -47,17 +45,46 @@ Retrieve a variant iterator for `p`.
 """
 function iterator(p::Pgen; startidx=1)
     if startidx == 1
-        v = Variant(0, 0, 0, 0)
-        VariantIteratorBase(p, v)
+        v = PgenVariant(0, 0, 0, 0)
+        PgenVariantIterator(p, v)
     else
         @assert false "Not implemented."
     end
 end
 
-@inline function set_first_variant!(v::Variant, p::Pgen)
+@inline function set_first_variant!(v::PgenVariant, p::Pgen)
     v.index = 1
     v.offset = offset_first_variant(p)
     v.record_type = p.header.variant_types[1]
     v.length = p.header.variant_lengths[1]
     v
+end
+
+@inline function chrom(p::Pgen, v::PgenVariant)
+    return string(p.pvar_df[v.index, Symbol("#CHROM")])
+end
+
+@inline function pos(p::Pgen, v::PgenVariant)
+    return p.pvar_df[v.index, Symbol("POS")]
+end
+
+@inline function rsid(p::Pgen, v::PgenVariant)
+    return string(p.pvar_df[v.index, Symbol("ID")])
+end
+
+function alleles(p::Pgen, v::PgenVariant)
+    return [p.pvar_df[v.index, Symbol("REF")], p.pvar_df[v.index, Symbol("ALT")]]
+end
+
+function alt_allele(p::Pgen, v::PgenVariant)
+    return p.pvar_df[v.index, Symbol("ALT")]
+end
+
+function ref_allele(p::Pgen, v::PgenVariant)
+    return p.pvar_df[v.index, Symbol("REF")]
+end
+
+function load_values!(arr::AbstractArray, p::Pgen, v::PgenVariant; genobuf = Vector{UInt8}(undef, n_samples), genoldbuf=nothing)
+    alt_allele_dosage!(arr, genobuf, p, v; genoldbuf=genoldbuf)
+    arr
 end

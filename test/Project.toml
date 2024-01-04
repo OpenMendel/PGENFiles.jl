@@ -1,3 +1,4 @@
 [deps]
 BGEN = "6db4b851-9beb-4b83-9d64-eb1cfb37721d"
+GeneticVariantBase = "2447270c-d849-4bf9-ac0d-b5c0b265991c"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"

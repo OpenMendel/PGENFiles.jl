@@ -133,14 +133,14 @@ function Header(io::IOStream)
 
     # Store the most recent non-LD-compressed variant for each LD-compressed variant
     # Useful for random-access of variants
-    most_recent_non_ld = Dict{UInt, Variant}()
+    most_recent_non_ld = Dict{UInt, PgenVariant}()
     buf = nothing
     offset = variant_block_offsets[1]
     for j in 1:n_variants
         vt = variant_types[j]
         vl = variant_lengths[j]
         if !((vt & 0x07 == 0x02) || (vt & 0x07 == 0x03))
-            buf = Variant(j, offset, vt, vl)
+            buf = PgenVariant(j, offset, vt, vl)
         else
             most_recent_non_ld[j] = buf
         end   

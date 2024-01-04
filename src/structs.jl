@@ -1,4 +1,4 @@
-mutable struct Variant
+mutable struct PgenVariant <: Variant
     index::UInt64 # 1-based
     offset::UInt64
     record_type::UInt8
@@ -22,10 +22,10 @@ struct Header{VTT,VLT,ACT,PRFT}
     variant_lengths::VLT # ScatteredVector
     allele_counts::ACT # Union{ScatteredVector, Nothing}
     provisional_reference_flags::PRFT # Union{ScatteredBitsVector, Nothing}
-    most_recent_non_ld::Dict{UInt, Variant}
+    most_recent_non_ld::Dict{UInt, PgenVariant}
 end
 
-struct Pgen{ST}
+struct Pgen{ST} <: GeneticData
     io::IOStream
     data::Union{Nothing, Vector{UInt8}}
     header::Header
@@ -36,6 +36,8 @@ struct Pgen{ST}
     dosage_cache::Vector{Float32} # Dosage values are represented by 16-bit numbers, Float32 is enough. 
     difflist_cache::Vector{ST} # length-64 vector for 64 Sample IDs.
     difflist_cache_incr::Vector{UInt32}
+    psam_df::DataFrame
+    pvar_df::DataFrame
 end
 
 """
@@ -43,7 +45,9 @@ end
 
 Creates an instance of `Pgen` from `filename`. `no_mmap` chooses whether to use `Mmap`.
 """
-function Pgen(filename::String; no_mmap::Bool=false)
+function Pgen(filename::String; no_mmap::Bool=false, 
+    psam_filename=filename[1:end-5] * ".psam", 
+    pvar_filename=filename[1:end-5] * ".pvar")
     io = open(filename)
     if !no_mmap
         data = mmap(io)
@@ -65,8 +69,10 @@ function Pgen(filename::String; no_mmap::Bool=false)
     difflist_cache_incr = Vector{UInt32}(undef, 64)
     difflist_cache_incr[1] = 0
     Pgen{ST}(io, data, header, variant_record_cache, genotypes_prev, genotypes_cache, 
-    genotypes_raw_cache,
-    dosage_cache, difflist_cache, difflist_cache_incr)
+        genotypes_raw_cache,
+        dosage_cache, difflist_cache, difflist_cache_incr,
+        CSV.read(psam_filename, DataFrame), 
+        CSV.read(pvar_filename, DataFrame))
 end
 
 @inline n_variants(p::Pgen) = p.header.n_variants

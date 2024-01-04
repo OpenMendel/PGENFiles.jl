@@ -1,5 +1,6 @@
 using PGENFiles
 using Test, BGEN
+using GeneticVariantBase
 const data = PGENFiles.datadir("bgen_example.16bits.pgen")
 @testset "PGENFiles.jl" begin
 
@@ -80,7 +81,7 @@ end
     g_pgen_ld = similar(g_pgen)
     d_pgen = Array{Float64}(undef, p.header.n_samples)
     for (v_bgen, v_pgen) in zip(BGEN.iterator(b), PGENFiles.iterator(p)) # 
-        d_bgen = BGEN.ref_allele_dosage!(b, v_bgen)
+        d_bgen = BGEN.first_allele_dosage!(b, v_bgen)
         PGENFiles.alt_allele_dosage!(d_pgen, g_pgen, p, v_pgen)      
         @test all(isapprox.(d_bgen, d_pgen; atol=5e-5, nans=true))
         PGENFiles.alt_allele_dosage!(d_pgen, g_pgen, p, v_pgen; genoldbuf=g_pgen_ld)  
@@ -89,6 +90,11 @@ end
         if v_rt != 0x02 && v_rt != 0x03 # non-LD-compressed. See Format description.
             g_pgen_ld .= g_pgen
         end
+        @test string(p.pvar_df[v_pgen.index, Symbol("#CHROM")]) == GeneticVariantBase.chrom(p, v_pgen)
+        @test p.pvar_df[v_pgen.index, :POS] == GeneticVariantBase.pos(p, v_pgen)
+        @test p.pvar_df[v_pgen.index, :REF] == GeneticVariantBase.ref_allele(p, v_pgen)
+        @test p.pvar_df[v_pgen.index, :ALT] == GeneticVariantBase.alt_allele(p, v_pgen)
+        @test all([p.pvar_df[v_pgen.index, :REF], p.pvar_df[v_pgen.index, :ALT]] .== GeneticVariantBase.alleles(p, v_pgen))
     end
 end
 end
