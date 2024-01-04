@@ -47,7 +47,9 @@ Creates an instance of `Pgen` from `filename`. `no_mmap` chooses whether to use 
 """
 function Pgen(filename::String; no_mmap::Bool=false, 
     psam_filename=filename[1:end-5] * ".psam", 
-    pvar_filename=filename[1:end-5] * ".pvar")
+    pvar_filename=filename[1:end-5] * ".pvar",
+    psam_header_lines=1,
+    pvar_header_lines=1)
     io = open(filename)
     if !no_mmap
         data = mmap(io)
@@ -71,8 +73,8 @@ function Pgen(filename::String; no_mmap::Bool=false,
     Pgen{ST}(io, data, header, variant_record_cache, genotypes_prev, genotypes_cache, 
         genotypes_raw_cache,
         dosage_cache, difflist_cache, difflist_cache_incr,
-        CSV.read(psam_filename, DataFrame), 
-        CSV.read(pvar_filename, DataFrame))
+        CSV.read(psam_filename, DataFrame; header=psam_header_lines), 
+        CSV.read(pvar_filename, DataFrame; header=pvar_header_lines))
 end
 
 @inline n_variants(p::Pgen) = p.header.n_variants
