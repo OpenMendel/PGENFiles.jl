@@ -197,3 +197,8 @@ function _get_difflist_dosage!(buf::Vector{T}, p::Pgen, dl::DiffList,
     end
     return offset + 2 * dl.len
 end
+
+function alt_dosages!(arr::AbstractArray{T}, p::Pgen, v::PgenVariant; 
+        genobuf=Vector{UInt8}(undef, p.header.n_samples), genoldbuf=nothing) where T <: Real
+    alt_allele_dosage!(arr, genobuf, p, v; genoldbuf=genoldbuf)
+end

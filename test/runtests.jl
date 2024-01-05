@@ -86,6 +86,8 @@ end
         @test all(isapprox.(d_bgen, d_pgen; atol=5e-5, nans=true))
         PGENFiles.alt_allele_dosage!(d_pgen, g_pgen, p, v_pgen; genoldbuf=g_pgen_ld)  
         @test all(isapprox.(d_bgen, d_pgen; atol=5e-5, nans=true))
+        GeneticVariantBase.alt_dosages!(d_pgen, p, v_pgen; genobuf=g_pgen, genoldbuf=g_pgen_ld)  
+        @test all(isapprox.(d_bgen, d_pgen; atol=5e-5, nans=true))
         v_rt = v_pgen.record_type & 0x07
         if v_rt != 0x02 && v_rt != 0x03 # non-LD-compressed. See Format description.
             g_pgen_ld .= g_pgen
