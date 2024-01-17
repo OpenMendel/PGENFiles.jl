@@ -8,6 +8,7 @@ import GeneticVariantBase: chrom, pos, rsid, alleles, alt_allele, ref_allele
 import GeneticVariantBase: maf, hwepval, infoscore, alt_dosages!
 export Pgen, iterator, n_samples, n_variants, get_genotypes, get_genotypes!
 export alt_allele_dosage, alt_allele_dosage!, ref_allele_dosage, ref_allele_dosage!
+export write_PGEN
 BitIntegers.@define_integers 24
 const variant_type_lengths = Dict(
     0x00 => (4, 1), 0x01 => (4, 2), 0x02 => (4, 3), 0x03 => (4, 4),
@@ -25,5 +26,6 @@ include("difflist.jl")
 include("iterator.jl")
 include("genotype.jl")
 include("dosage.jl")
+include("write.jl")
 datadir(parts...) = joinpath(@__DIR__, "..", "data", parts...)
 end
