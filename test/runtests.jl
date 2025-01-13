@@ -99,4 +99,18 @@ end
         @test all([p.pvar_df[v_pgen.index, :REF], p.pvar_df[v_pgen.index, :ALT]] .== GeneticVariantBase.alleles(p, v_pgen))
     end
 end
+    
+@testset "Custom collect for PgenVariantIterator" begin
+    # Setup PGEN file and iterator
+    p = PGENFiles.Pgen(data)  # Replace with a valid test file
+    v_iter = iterator(p)
+
+    # Collect variants
+    variants = collect(v_iter)
+
+    # Check that variants are unique
+    @test length(variants) == p.header.n_variants
+    @test all(v != variants[end] for v in variants[1:end-1])
+end   
+    
 end
