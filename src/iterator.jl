@@ -38,6 +38,17 @@ end
     (vi.p.header.n_variants, )
 end
 
+# Overload collect for PgenVariantIterator
+function Base.collect(vi::PgenVariantIterator)
+    result = Vector{Variant}(undef, length(vi))
+    i = 1
+    for v in vi
+        result[i] = PgenVariant(v.index, v.offset, v.record_type, v.length)
+        i += 1
+    end
+    return result
+end
+
 """
     iterator(p::Pgen; startidx=1)
     
