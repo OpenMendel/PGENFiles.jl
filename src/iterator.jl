@@ -1,6 +1,6 @@
 """
-    PgenVariantIterator(p::Pgen)
-Variant iterator that iterates from the beginning of the Pgen file
+    PgenVariantIterator(p::Pgen, v::Variant)
+Variant iterator that iterates from the variant v.
 """
 struct PgenVariantIterator <: VariantIterator
     p::Pgen
