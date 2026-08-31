@@ -73,7 +73,7 @@ function Header(io::IOStream)
 
         # read variant record length track
         arr = read(io, block_size * bytes_per_record_length) #data[offset + 1 : offset + block_size * bytes_per_record_length]
-        reinterpreted = reinterpret(dtype_variant_length, arr)
+        reinterpreted = reinterpret_track(bytes_per_record_length, arr)
         t_variant_sizes = typeof(reinterpreted)
         push!(sectors_variant_lengths, Ref(reinterpreted))
         offset += bytes_per_record_length * block_size 
@@ -82,7 +82,7 @@ function Header(io::IOStream)
         if sectors_allele_counts !== nothing
             arr = read(io, block_size * bytes_allele_counts)
             #arr = data[offset + 1:offset + block_size * bytes_allele_counts]
-            reinterpreted = reinterpret(dtype_allele_counts, arr)
+            reinterpreted = reinterpret_track(bytes_allele_counts, arr)
             t_allele_counts = typeof(reinterpreted)
             push!(sectors_allele_counts, Ref(reinterpreted))
             offset += bytes_allele_counts * block_size

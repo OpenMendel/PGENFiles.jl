@@ -61,6 +61,42 @@ end
 end
 
 """
+    PackedUInt24Vector(data)
+
+Lazy vector of packed 3-byte little-endian unsigned integers over the byte
+buffer `data`, widened to `UInt32` on access. Used in place of
+`reinterpret(UInt24, data)`: 24-bit primitive types are padded to 4 bytes in
+memory (as of Julia 1.14, matching C's `_BitInt`), so they cannot represent
+the packed 3-byte records in a pgen file.
+"""
+struct PackedUInt24Vector{V<:AbstractVector{UInt8}} <: AbstractVector{UInt32}
+    data::V
+end
+
+Base.size(x::PackedUInt24Vector) = (length(x.data) ÷ 3,)
+Base.IndexStyle(::Type{<:PackedUInt24Vector}) = IndexLinear()
+
+Base.@propagate_inbounds function Base.getindex(x::PackedUInt24Vector, i::Int)
+    @boundscheck checkbounds(x, i)
+    j = 3 * (i - 1)
+    @inbounds UInt32(x.data[begin + j]) | UInt32(x.data[begin + j + 1]) << 8 | UInt32(x.data[begin + j + 2]) << 16
+end
+
+"""
+    reinterpret_track(width, data)
+
+Interpret the byte buffer `data` as a vector of packed `width`-byte
+little-endian unsigned integers, without copying.
+"""
+function reinterpret_track(width::Integer, data::AbstractVector{UInt8})
+    if width == 3
+        PackedUInt24Vector(data)
+    else
+        reinterpret(bytes_to_UInt[width], data)
+    end
+end
+
+"""
     DiffList{V,W,X,Y}(len, sample_id_bases, last_component_sizes, has_genotypes, 
     genotypes, sample_id_increments)
 
