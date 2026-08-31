@@ -4,6 +4,23 @@ using GeneticVariantBase
 const data = PGENFiles.datadir("bgen_example.16bits.pgen")
 @testset "PGENFiles.jl" begin
 
+@testset "reinterpret_track" begin
+    # packed 3-byte little-endian records: [0x000001, 0xABCDEF, 0xFFFFFF]
+    bytes = UInt8[0x01, 0x00, 0x00, 0xEF, 0xCD, 0xAB, 0xFF, 0xFF, 0xFF]
+    v = PGENFiles.reinterpret_track(3, bytes)
+    @test v isa PGENFiles.PackedUInt24Vector
+    @test eltype(v) == UInt32
+    @test length(v) == 3
+    @test collect(v) == UInt32[0x000001, 0xABCDEF, 0xFFFFFF]
+    @test_throws BoundsError v[4]
+    @test PGENFiles.reinterpret_track(1, bytes) == bytes
+    @test PGENFiles.reinterpret_track(2, UInt8[0x34, 0x12]) == UInt16[0x1234]
+    @test PGENFiles.reinterpret_track(4, UInt8[0x78, 0x56, 0x34, 0x12]) ==
+        UInt32[0x12345678]
+    @test PGENFiles.reinterpret_track(8, UInt8[0x78, 0x56, 0x34, 0x12, 0, 0, 0, 0xFF]) ==
+        UInt64[0xFF000000_12345678]
+end
+
 @testset "Header" begin
     p = PGENFiles.Pgen(data)
     h = p.header

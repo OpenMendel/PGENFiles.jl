@@ -13,11 +13,11 @@ function parse_difflist(data::AbstractVector{UInt8},
     sample_id_dtype = bytes_to_UInt[bytes_per_sample_id]
     if len == 0
         return DiffList{sample_id_dtype, Nothing}(
-            0, C_NULL, C_NULL, has_genotype, nothing, C_NULL), offset
+            0, zero(sample_id_dtype), C_NULL, has_genotype, nothing, C_NULL), offset
     end
     # sample id bases
     n_groups = ceil_int(len, 0x000040) # 64 in decimal
-    sample_id_bases = reinterpret(sample_id_dtype, view(data, 
+    sample_id_bases = reinterpret_track(bytes_per_sample_id, view(data,
         Int(offset + 1) : Int(offset + n_groups * bytes_per_sample_id)))
 
     offset += n_groups * bytes_per_sample_id
